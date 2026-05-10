@@ -453,16 +453,18 @@ tbrlibrary=https://www.notion.so/..."
     const textarea = document.getElementById("linksTextarea");
     const saveBtn = document.getElementById("saveSettingsBtn");
     const resetBtn = document.getElementById("resetSettingsBtn");
+    const themeStrip = document.getElementById("themePreviewStrip");
 
-    document.querySelectorAll(".theme-pill").forEach((button) => {
-      button.addEventListener("click", () => {
-        const selectedTheme = button.dataset.theme;
+    themeStrip.addEventListener("click", (event) => {
+      const button = event.target.closest(".theme-pill");
+      if (!button) return;
 
-        saveTheme(selectedTheme);
-        renderThemePills(selectedTheme);
-        bindThemePillEventsAgain();
-        showStatus("Theme saved. Your image widgets should update automatically.", "success");
-      });
+      const selectedTheme = button.dataset.theme;
+
+      saveTheme(selectedTheme);
+      renderThemePills(selectedTheme);
+
+      showStatus("Theme saved. Your image widgets should update automatically.", "success");
     });
 
     document.querySelectorAll(".mode-pill").forEach((button) => {
@@ -495,19 +497,6 @@ tbrlibrary=https://www.notion.so/..."
       refreshControlFromStorage();
       broadcastSync();
       showStatus("Settings reset to default.", "warning");
-    });
-  }
-
-  function bindThemePillEventsAgain() {
-    document.querySelectorAll(".theme-pill").forEach((button) => {
-      button.addEventListener("click", () => {
-        const selectedTheme = button.dataset.theme;
-
-        saveTheme(selectedTheme);
-        renderThemePills(selectedTheme);
-        bindThemePillEventsAgain();
-        showStatus("Theme saved. Your image widgets should update automatically.", "success");
-      });
     });
   }
 

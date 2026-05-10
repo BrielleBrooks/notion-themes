@@ -555,20 +555,26 @@ function bindControlEvents() {
       console.warn(`Unknown linkKey requested: ${linkKey}`);
     }
 
-    if (linkUrl) {
-      app.innerHTML = `
-        <div class="image-widget ${layoutParam === "heading" ? "heading-layout" : ""}">
-          <a
-            id="imageLink"
-            href="${escapeAttribute(linkUrl)}"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Open ${escapeAttribute(linkKey)} page"
-          >
-            ${imageMarkup}
-          </a>
-        </div>
-      `;
+  if (linkUrl) {
+  app.innerHTML = `
+    <div class="image-widget ${layoutParam === "heading" ? "heading-layout" : ""}">
+      <button
+        class="image-link-button"
+        id="imageLink"
+        type="button"
+        aria-label="Open ${escapeAttribute(linkKey)} page"
+      >
+        ${imageMarkup}
+      </button>
+    </div>
+  `;
+
+  const imageLink = document.getElementById("imageLink");
+
+  imageLink.addEventListener("click", () => {
+    window.top.location.href = linkUrl;
+  });
+}
     } else {
       app.innerHTML = `
         <div class="image-widget ${layoutParam === "heading" ? "heading-layout" : ""}">

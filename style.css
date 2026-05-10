@@ -96,8 +96,13 @@ body.image-mode .image-widget a {
 ========================= */
 
 .image-widget.heading-layout {
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-left: 34px;
+  padding-right: 220px;
+}
+
+.image-widget.heading-layout .theme-image {
+  width: 100%;
+  max-width: 100%;
 }
 
 .theme-image {

@@ -91,6 +91,15 @@ body.image-mode .image-widget a {
   text-decoration: none;
 }
 
+/* =========================
+   HEADING LAYOUT MODE
+========================= */
+
+.image-widget.heading-layout {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
 .theme-image {
   display: block;
   width: 100%;

@@ -230,9 +230,9 @@
     const warnings = [];
 
     const lines = String(rawText || "")
-      .split(/\r?\n/g)
-      .map((line) => line.trim())
-      .filter(Boolean);
+  .split(/[\n,]+/g)
+  .map((line) => line.trim())
+  .filter(Boolean);
 
     lines.forEach((line, index) => {
       const equalsIndex = line.indexOf("=");

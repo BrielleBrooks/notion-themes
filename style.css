@@ -1,0 +1,270 @@
+:root {
+  --font-stack: "Poppins", "Inter", "Segoe UI", sans-serif;
+  --bg-dark: #191919;
+  --card-bg: rgba(255, 255, 255, 0.08);
+  --card-border: rgba(255, 255, 255, 0.12);
+  --text: #ffffff;
+  --muted: rgba(255, 255, 255, 0.7);
+  --input-bg: rgba(255, 255, 255, 0.08);
+  --input-border: rgba(255, 255, 255, 0.12);
+  --button-bg: #ffffff;
+  --button-text: #191919;
+  --secondary-bg: rgba(255, 255, 255, 0.1);
+  --radius-xl: 24px;
+  --radius-md: 14px;
+  --transition: 220ms ease;
+}
+
+/* Critical image-widget reset */
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  overflow: hidden;
+  font-family: var(--font-stack);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+/* =========================
+   IMAGE WIDGET MODE
+========================= */
+
+.image-mode {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  overflow: hidden;
+}
+
+.image-widget {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  line-height: 0;
+  overflow: hidden;
+}
+
+.image-widget a {
+  display: block;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  text-decoration: none;
+}
+
+.theme-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  object-fit: contain;
+  object-position: center center;
+  background: transparent;
+  border: 0;
+}
+
+.theme-image.clickable {
+  cursor: pointer;
+}
+
+.quiet-error {
+  display: none;
+}
+
+/* =========================
+   CONTROL PANEL MODE
+========================= */
+
+.control-mode {
+  background: transparent !important;
+  overflow: auto;
+}
+
+.control-shell {
+  width: 100%;
+  min-height: 100vh;
+  padding: 16px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+}
+
+.control-card {
+  width: min(100%, 680px);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.12), transparent 34%),
+    var(--bg-dark);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  padding: 22px;
+  color: var(--text);
+}
+
+.control-header {
+  margin-bottom: 18px;
+}
+
+.control-kicker {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.control-title {
+  margin: 0;
+  font-size: clamp(24px, 5vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+}
+
+.control-subtitle {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.control-section {
+  margin-top: 18px;
+}
+
+.control-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.theme-select,
+.links-textarea {
+  width: 100%;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text);
+  border-radius: var(--radius-md);
+  font: inherit;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.theme-select {
+  padding: 13px 14px;
+  cursor: pointer;
+}
+
+.theme-select option {
+  background: #191919;
+  color: #ffffff;
+}
+
+.links-textarea {
+  min-height: 210px;
+  resize: vertical;
+  padding: 14px;
+  line-height: 1.45;
+}
+
+.theme-select:focus,
+.links-textarea:focus {
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
+}
+
+.helper-text {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.control-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform var(--transition), opacity var(--transition), background var(--transition);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--button-bg);
+  color: var(--button-text);
+}
+
+.btn-secondary {
+  background: var(--secondary-bg);
+  color: var(--text);
+}
+
+.status-message {
+  margin-top: 14px;
+  min-height: 20px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.status-message.success {
+  color: #8ff0b1;
+}
+
+.status-message.warning {
+  color: #ffd37a;
+}
+
+.theme-preview-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.theme-pill {
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+}
+
+.theme-pill.active {
+  background: #ffffff;
+  color: #191919;
+}

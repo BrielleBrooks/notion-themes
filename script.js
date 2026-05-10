@@ -449,56 +449,58 @@ tbrlibrary=https://www.notion.so/..."
     applyNotionMode(notionMode);
   }
 
-  function bindControlEvents() {
-    const textarea = document.getElementById("linksTextarea");
-    const saveBtn = document.getElementById("saveSettingsBtn");
-    const resetBtn = document.getElementById("resetSettingsBtn");
-    const themeStrip = document.getElementById("themePreviewStrip");
+function bindControlEvents() {
+  const textarea = document.getElementById("linksTextarea");
+  const saveBtn = document.getElementById("saveSettingsBtn");
+  const resetBtn = document.getElementById("resetSettingsBtn");
 
-    themeStrip.addEventListener("click", (event) => {
-      const button = event.target.closest(".theme-pill");
-      if (!button) return;
+  document.addEventListener("click", (event) => {
+    const themeButton = event.target.closest(".theme-pill");
 
-      const selectedTheme = button.dataset.theme;
+    if (themeButton) {
+      const selectedTheme = themeButton.dataset.theme;
 
       saveTheme(selectedTheme);
       renderThemePills(selectedTheme);
 
       showStatus("Theme saved. Your image widgets should update automatically.", "success");
-    });
+      return;
+    }
 
-    document.querySelectorAll(".mode-pill").forEach((button) => {
-      button.addEventListener("click", () => {
-        const selectedMode = button.dataset.mode;
+    const modeButton = event.target.closest(".mode-pill");
 
-        saveNotionMode(selectedMode);
-        renderModePills(selectedMode);
-        showStatus(`Notion ${selectedMode} mode saved.`, "success");
-      });
-    });
+    if (modeButton) {
+      const selectedMode = modeButton.dataset.mode;
 
-    saveBtn.addEventListener("click", () => {
-      const { links, warnings } = parseLinksTextarea(textarea.value);
+      saveNotionMode(selectedMode);
+      renderModePills(selectedMode);
 
-      saveLinks(links);
+      showStatus(`Notion ${selectedMode} mode saved.`, "success");
+    }
+  });
 
-      if (warnings.length) {
-        showStatus(`Saved with ${warnings.length} warning${warnings.length === 1 ? "" : "s"}. Check your link format.`, "warning");
-        console.warn("Theme widget link warnings:", warnings);
-      } else {
-        showStatus("Settings saved successfully.", "success");
-      }
-    });
+  saveBtn.addEventListener("click", () => {
+    const { links, warnings } = parseLinksTextarea(textarea.value);
 
-    resetBtn.addEventListener("click", () => {
-      safeRemoveItem(STORAGE_THEME_KEY);
-      safeRemoveItem(STORAGE_LINKS_KEY);
-      safeRemoveItem(STORAGE_NOTION_MODE_KEY);
-      refreshControlFromStorage();
-      broadcastSync();
-      showStatus("Settings reset to default.", "warning");
-    });
-  }
+    saveLinks(links);
+
+    if (warnings.length) {
+      showStatus(`Saved with ${warnings.length} warning${warnings.length === 1 ? "" : "s"}. Check your link format.`, "warning");
+      console.warn("Theme widget link warnings:", warnings);
+    } else {
+      showStatus("Settings saved successfully.", "success");
+    }
+  });
+
+  resetBtn.addEventListener("click", () => {
+    safeRemoveItem(STORAGE_THEME_KEY);
+    safeRemoveItem(STORAGE_LINKS_KEY);
+    safeRemoveItem(STORAGE_NOTION_MODE_KEY);
+    refreshControlFromStorage();
+    broadcastSync();
+    showStatus("Settings reset to default.", "warning");
+  });
+}
 
   function showStatus(message, typeName = "") {
     const status = document.getElementById("statusMessage");

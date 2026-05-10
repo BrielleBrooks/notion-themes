@@ -3,9 +3,11 @@
 
   const STORAGE_THEME_KEY = "selectedTheme";
   const STORAGE_LINKS_KEY = "themeLinks";
+  const STORAGE_NOTION_MODE_KEY = "notionMode";
   const CHANNEL_NAME = "reading-tracker-theme-sync";
 
   const DEFAULT_THEME = "default";
+  const DEFAULT_NOTION_MODE = "dark";
   const POLL_INTERVAL_MS = 500;
 
   const THEMES = [
@@ -88,6 +90,7 @@
   let broadcastChannel = null;
   let lastThemeSnapshot = "";
   let lastLinksSnapshot = "";
+  let lastNotionModeSnapshot = "";
 
   function canUseLocalStorage() {
     try {
@@ -139,6 +142,11 @@
     return isValidTheme(saved) ? saved : DEFAULT_THEME;
   }
 
+  function getSavedNotionMode() {
+    const saved = safeGetItem(STORAGE_NOTION_MODE_KEY);
+    return saved === "light" || saved === "dark" ? saved : DEFAULT_NOTION_MODE;
+  }
+
   function getSavedLinks() {
     const raw = safeGetItem(STORAGE_LINKS_KEY);
     if (!raw) return {};
@@ -158,6 +166,13 @@
     broadcastSync();
   }
 
+  function saveNotionMode(modeValue) {
+    const cleanMode = modeValue === "light" || modeValue === "dark" ? modeValue : DEFAULT_NOTION_MODE;
+    safeSetItem(STORAGE_NOTION_MODE_KEY, cleanMode);
+    applyNotionMode(cleanMode);
+    broadcastSync();
+  }
+
   function saveLinks(linksObject) {
     safeSetItem(STORAGE_LINKS_KEY, JSON.stringify(linksObject || {}));
     broadcastSync();
@@ -171,10 +186,21 @@
     return VALID_LINK_KEYS.includes(key);
   }
 
+  function applyNotionMode(modeValue = getSavedNotionMode()) {
+    const mode = modeValue === "light" ? "light" : "dark";
+
+    document.documentElement.dataset.notionMode = mode;
+    document.body.dataset.notionMode = mode;
+
+    document.documentElement.style.setProperty(
+      "--notion-widget-bg",
+      mode === "light" ? "#ffffff" : "#191919"
+    );
+  }
+
   function cleanAssetName(assetName) {
     if (!assetName) return "";
 
-    // Prevent paths like ../ or nested folders from URL params.
     return String(assetName)
       .trim()
       .split("/")
@@ -272,6 +298,7 @@
       broadcastChannel.postMessage({
         type: "theme-widget-sync",
         theme: getSavedTheme(),
+        notionMode: getSavedNotionMode(),
         links: getSavedLinks(),
         timestamp: Date.now()
       });
@@ -281,6 +308,8 @@
   }
 
   function handleExternalSync() {
+    applyNotionMode();
+
     if (type === "control") {
       refreshControlFromStorage();
     } else {
@@ -290,21 +319,28 @@
 
   function startStorageListeners() {
     window.addEventListener("storage", (event) => {
-      if ([STORAGE_THEME_KEY, STORAGE_LINKS_KEY].includes(event.key)) {
+      if ([STORAGE_THEME_KEY, STORAGE_LINKS_KEY, STORAGE_NOTION_MODE_KEY].includes(event.key)) {
         handleExternalSync();
       }
     });
 
     lastThemeSnapshot = safeGetItem(STORAGE_THEME_KEY) || "";
     lastLinksSnapshot = safeGetItem(STORAGE_LINKS_KEY) || "";
+    lastNotionModeSnapshot = safeGetItem(STORAGE_NOTION_MODE_KEY) || "";
 
     setInterval(() => {
       const currentTheme = safeGetItem(STORAGE_THEME_KEY) || "";
       const currentLinks = safeGetItem(STORAGE_LINKS_KEY) || "";
+      const currentNotionMode = safeGetItem(STORAGE_NOTION_MODE_KEY) || "";
 
-      if (currentTheme !== lastThemeSnapshot || currentLinks !== lastLinksSnapshot) {
+      if (
+        currentTheme !== lastThemeSnapshot ||
+        currentLinks !== lastLinksSnapshot ||
+        currentNotionMode !== lastNotionModeSnapshot
+      ) {
         lastThemeSnapshot = currentTheme;
         lastLinksSnapshot = currentLinks;
+        lastNotionModeSnapshot = currentNotionMode;
         handleExternalSync();
       }
     }, POLL_INTERVAL_MS);
@@ -314,6 +350,8 @@
     document.body.classList.remove("image-mode");
     document.body.classList.add("control-mode");
 
+    applyNotionMode();
+
     app.innerHTML = `
       <section class="control-shell">
         <div class="control-card">
@@ -321,15 +359,22 @@
             <div class="control-kicker">Reading Tracker</div>
             <h1 class="control-title">Theme Settings</h1>
             <p class="control-subtitle">
-              Choose your visual theme and paste your generated Notion page links below.
+              Choose your visual theme, set your Notion appearance, and paste your generated Notion page links below.
               All theme-aware image widgets will update from this control panel.
             </p>
           </header>
 
           <div class="control-section">
-            <label class="control-label" for="themeSelect">Theme</label>
-            <select class="theme-select" id="themeSelect"></select>
+            <label class="control-label">Theme</label>
             <div class="theme-preview-strip" id="themePreviewStrip"></div>
+          </div>
+
+          <div class="control-section">
+            <label class="control-label">Notion Appearance</label>
+            <div class="notion-mode-toggle" id="notionModeToggle">
+              <button class="mode-pill" type="button" data-mode="light">Light Mode</button>
+              <button class="mode-pill" type="button" data-mode="dark">Dark Mode</button>
+            </div>
           </div>
 
           <div class="control-section">
@@ -342,10 +387,6 @@
 library=https://www.notion.so/...
 tbrlibrary=https://www.notion.so/..."
             ></textarea>
-            <div class="helper-text">
-              Paste one link per line using this format: <strong>key=url</strong>.
-              Blank lines are ignored.
-            </div>
           </div>
 
           <div class="control-actions">
@@ -358,18 +399,8 @@ tbrlibrary=https://www.notion.so/..."
       </section>
     `;
 
-    populateThemeSelect();
     refreshControlFromStorage();
     bindControlEvents();
-  }
-
-  function populateThemeSelect() {
-    const select = document.getElementById("themeSelect");
-    if (!select) return;
-
-    select.innerHTML = THEMES
-      .map((theme) => `<option value="${theme.value}">${theme.label}</option>`)
-      .join("");
   }
 
   function renderThemePills(activeTheme) {
@@ -379,44 +410,75 @@ tbrlibrary=https://www.notion.so/..."
     strip.innerHTML = THEMES
       .map((theme) => {
         const activeClass = theme.value === activeTheme ? "active" : "";
-        return `<span class="theme-pill ${activeClass}">${theme.label}</span>`;
+        return `
+          <button
+            class="theme-pill ${activeClass}"
+            type="button"
+            data-theme="${theme.value}"
+            aria-pressed="${theme.value === activeTheme ? "true" : "false"}"
+          >
+            ${theme.label}
+          </button>
+        `;
       })
       .join("");
   }
 
+  function renderModePills(activeMode) {
+    const modeButtons = document.querySelectorAll(".mode-pill");
+
+    modeButtons.forEach((button) => {
+      const isActive = button.dataset.mode === activeMode;
+      button.classList.toggle("active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  }
+
   function refreshControlFromStorage() {
-    const select = document.getElementById("themeSelect");
     const textarea = document.getElementById("linksTextarea");
 
-    if (!select || !textarea) return;
+    if (!textarea) return;
 
     const theme = getSavedTheme();
     const links = getSavedLinks();
+    const notionMode = getSavedNotionMode();
 
-    select.value = theme;
     textarea.value = linksToTextareaValue(links);
     renderThemePills(theme);
+    renderModePills(notionMode);
+    applyNotionMode(notionMode);
   }
 
   function bindControlEvents() {
-    const select = document.getElementById("themeSelect");
     const textarea = document.getElementById("linksTextarea");
     const saveBtn = document.getElementById("saveSettingsBtn");
     const resetBtn = document.getElementById("resetSettingsBtn");
 
-    select.addEventListener("change", () => {
-      saveTheme(select.value);
-      renderThemePills(select.value);
-      showStatus("Theme saved. Your image widgets should update automatically.", "success");
+    document.querySelectorAll(".theme-pill").forEach((button) => {
+      button.addEventListener("click", () => {
+        const selectedTheme = button.dataset.theme;
+
+        saveTheme(selectedTheme);
+        renderThemePills(selectedTheme);
+        bindThemePillEventsAgain();
+        showStatus("Theme saved. Your image widgets should update automatically.", "success");
+      });
+    });
+
+    document.querySelectorAll(".mode-pill").forEach((button) => {
+      button.addEventListener("click", () => {
+        const selectedMode = button.dataset.mode;
+
+        saveNotionMode(selectedMode);
+        renderModePills(selectedMode);
+        showStatus(`Notion ${selectedMode} mode saved.`, "success");
+      });
     });
 
     saveBtn.addEventListener("click", () => {
-      const selectedTheme = select.value;
       const { links, warnings } = parseLinksTextarea(textarea.value);
 
-      saveTheme(selectedTheme);
       saveLinks(links);
-      renderThemePills(selectedTheme);
 
       if (warnings.length) {
         showStatus(`Saved with ${warnings.length} warning${warnings.length === 1 ? "" : "s"}. Check your link format.`, "warning");
@@ -429,9 +491,23 @@ tbrlibrary=https://www.notion.so/..."
     resetBtn.addEventListener("click", () => {
       safeRemoveItem(STORAGE_THEME_KEY);
       safeRemoveItem(STORAGE_LINKS_KEY);
+      safeRemoveItem(STORAGE_NOTION_MODE_KEY);
       refreshControlFromStorage();
       broadcastSync();
       showStatus("Settings reset to default.", "warning");
+    });
+  }
+
+  function bindThemePillEventsAgain() {
+    document.querySelectorAll(".theme-pill").forEach((button) => {
+      button.addEventListener("click", () => {
+        const selectedTheme = button.dataset.theme;
+
+        saveTheme(selectedTheme);
+        renderThemePills(selectedTheme);
+        bindThemePillEventsAgain();
+        showStatus("Theme saved. Your image widgets should update automatically.", "success");
+      });
     });
   }
 
@@ -452,6 +528,8 @@ tbrlibrary=https://www.notion.so/..."
   function renderImageWidget() {
     document.body.classList.remove("control-mode");
     document.body.classList.add("image-mode");
+
+    applyNotionMode();
 
     const assetName = cleanAssetName(assetParam);
 
@@ -534,6 +612,7 @@ tbrlibrary=https://www.notion.so/..."
   function init() {
     initBroadcastChannel();
     startStorageListeners();
+    applyNotionMode();
 
     if (type === "control") {
       renderControlPanel();

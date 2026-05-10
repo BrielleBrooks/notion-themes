@@ -123,6 +123,17 @@ body.image-mode .image-widget a {
   cursor: pointer;
 }
 
+.image-link-button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: 0;
+  cursor: pointer;
+}
+
 .quiet-error {
   display: none;
 }

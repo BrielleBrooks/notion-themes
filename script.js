@@ -84,6 +84,7 @@
   const type = params.get("type");
   const assetParam = params.get("asset");
   const linkKeyParam = params.get("linkKey");
+  const layoutParam = params.get("layout");
 
   const app = document.getElementById("app");
 
@@ -556,7 +557,7 @@ function bindControlEvents() {
 
     if (linkUrl) {
       app.innerHTML = `
-        <div class="image-widget">
+        <div class="image-widget ${layoutParam === "heading" ? "heading-layout" : ""}">
           <a
             id="imageLink"
             href="${escapeAttribute(linkUrl)}"
@@ -570,7 +571,7 @@ function bindControlEvents() {
       `;
     } else {
       app.innerHTML = `
-        <div class="image-widget">
+        <div class="image-widget ${layoutParam === "heading" ? "heading-layout" : ""}">
           ${imageMarkup}
         </div>
       `;

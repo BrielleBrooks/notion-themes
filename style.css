@@ -1,6 +1,8 @@
 :root {
   --font-stack: "Poppins", "Inter", "Segoe UI", sans-serif;
   --bg-dark: #191919;
+  --bg-light: #ffffff;
+  --notion-widget-bg: #191919;
   --card-bg: rgba(255, 255, 255, 0.08);
   --card-border: rgba(255, 255, 255, 0.12);
   --text: #ffffff;
@@ -15,17 +17,27 @@
   --transition: 220ms ease;
 }
 
-/* Critical image-widget reset */
+/* Critical reset */
 html,
 body {
   width: 100%;
   min-height: 100%;
   margin: 0;
   padding: 0;
-  background: transparent !important;
-  background-color: transparent !important;
+  background: var(--notion-widget-bg) !important;
+  background-color: var(--notion-widget-bg) !important;
   overflow: hidden;
   font-family: var(--font-stack);
+}
+
+html[data-notion-mode="light"],
+body[data-notion-mode="light"] {
+  --notion-widget-bg: #ffffff;
+}
+
+html[data-notion-mode="dark"],
+body[data-notion-mode="dark"] {
+  --notion-widget-bg: #191919;
 }
 
 * {
@@ -37,8 +49,8 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: transparent !important;
-  background-color: transparent !important;
+  background: var(--notion-widget-bg) !important;
+  background-color: var(--notion-widget-bg) !important;
 }
 
 /* =========================
@@ -48,8 +60,8 @@ body {
 .image-mode {
   margin: 0;
   padding: 0;
-  background: transparent !important;
-  background-color: transparent !important;
+  background: var(--notion-widget-bg) !important;
+  background-color: var(--notion-widget-bg) !important;
   overflow: hidden;
 }
 
@@ -57,16 +69,16 @@ body.image-mode,
 body.image-mode #app,
 body.image-mode .image-widget,
 body.image-mode .image-widget a {
-  background: transparent !important;
-  background-color: transparent !important;
+  background: var(--notion-widget-bg) !important;
+  background-color: var(--notion-widget-bg) !important;
 }
 
 .image-widget {
   width: 100%;
   margin: 0;
   padding: 0;
-  background: transparent !important;
-  background-color: transparent !important;
+  background: var(--notion-widget-bg) !important;
+  background-color: var(--notion-widget-bg) !important;
   line-height: 0;
   overflow: hidden;
 }
@@ -106,8 +118,8 @@ body.image-mode .image-widget a {
 ========================= */
 
 .control-mode {
-  background: transparent !important;
-  background-color: transparent !important;
+  background: var(--notion-widget-bg) !important;
+  background-color: var(--notion-widget-bg) !important;
   overflow: auto;
 }
 
@@ -117,8 +129,8 @@ body.image-mode .image-widget a {
   padding: 16px;
   display: grid;
   place-items: center;
-  background: transparent !important;
-  background-color: transparent !important;
+  background: var(--notion-widget-bg) !important;
+  background-color: var(--notion-widget-bg) !important;
 }
 
 .control-card {
@@ -173,7 +185,6 @@ body.image-mode .image-widget a {
   color: var(--text);
 }
 
-.theme-select,
 .links-textarea {
   width: 100%;
   border: 1px solid var(--input-border);
@@ -183,37 +194,91 @@ body.image-mode .image-widget a {
   font: inherit;
   outline: none;
   transition: border-color var(--transition), box-shadow var(--transition);
-}
-
-.theme-select {
-  padding: 13px 14px;
-  cursor: pointer;
-}
-
-.theme-select option {
-  background: #191919;
-  color: #ffffff;
-}
-
-.links-textarea {
   min-height: 210px;
   resize: vertical;
   padding: 14px;
   line-height: 1.45;
 }
 
-.theme-select:focus,
 .links-textarea:focus {
   border-color: rgba(255, 255, 255, 0.34);
   box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
 }
 
-.helper-text {
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.45;
+/* =========================
+   THEME BUTTONS
+========================= */
+
+.theme-preview-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
 }
+
+.theme-pill {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+  cursor: pointer;
+  transition: transform var(--transition), background var(--transition), color var(--transition);
+}
+
+.theme-pill:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.theme-pill.active {
+  background: #ffffff;
+  color: #191919;
+}
+
+/* =========================
+   NOTION MODE BUTTONS
+========================= */
+
+.notion-mode-toggle {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.mode-pill {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+  cursor: pointer;
+  transition: transform var(--transition), background var(--transition), color var(--transition);
+}
+
+.mode-pill:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.mode-pill.active {
+  background: #ffffff;
+  color: #191919;
+}
+
+/* =========================
+   BUTTONS + STATUS
+========================= */
 
 .control-actions {
   display: flex;
@@ -264,25 +329,4 @@ body.image-mode .image-widget a {
 
 .status-message.warning {
   color: #ffd37a;
-}
-
-.theme-preview-strip {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-
-.theme-pill {
-  border-radius: 999px;
-  padding: 7px 10px;
-  font-size: 12px;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--muted);
-}
-
-.theme-pill.active {
-  background: #ffffff;
-  color: #191919;
 }

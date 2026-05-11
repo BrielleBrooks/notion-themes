@@ -561,7 +561,7 @@ tbrlibrary=https://www.notion.so/..."
             class="image-link-button"
             id="imageLink"
             href="${escapeAttribute(linkUrl)}"
-            target="_top"
+            target="_self"
             aria-label="Open ${escapeAttribute(linkKey)} page"
           >
             ${imageMarkup}

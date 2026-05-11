@@ -260,7 +260,7 @@
   url.startsWith("/");
 
     if (!isAllowedUrl) {
-      warnings.push(`Line ${index + 1} skipped: URL must start with http://, https://, or notion://.`);
+      warnings.push(`Line ${index + 1} skipped: URL must start with http://, https://, notion://, or /.`);
       return;
     }
 

@@ -223,7 +223,7 @@
       .trim() || "Theme image";
   }
 
- function parseLinksTextarea(rawText) {
+function parseLinksTextarea(rawText) {
   const links = {};
   const warnings = [];
 
@@ -250,17 +250,6 @@
 
     if (!isValidLinkKey(key)) {
       warnings.push(`Line ${index + 1} skipped: "${key}" is not a recognized key.`);
-      return;
-    }
-
-    const isAllowedUrl =
-  url.startsWith("https://") ||
-  url.startsWith("http://") ||
-  url.startsWith("notion://") ||
-  url.startsWith("/");
-
-    if (!isAllowedUrl) {
-      warnings.push(`Line ${index + 1} skipped: URL must start with http://, https://, notion://, or /.`);
       return;
     }
 

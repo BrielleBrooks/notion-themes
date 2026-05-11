@@ -165,19 +165,24 @@ function safeGetItem(key) {
   }
 
   function getUserId() {
-    if (setupParam && setupParam.trim()) {
-      return setupParam.trim();
-    }
+  const savedLinks = getSavedLinks();
 
-    let savedUserId = safeGetItem(USER_ID_STORAGE_KEY);
-
-    if (!savedUserId) {
-      savedUserId = createUserId();
-      safeSetItem(USER_ID_STORAGE_KEY, savedUserId);
-    }
-
-    return savedUserId;
+  if (savedLinks.home) {
+    return savedLinks.home
+      .replace(/^https:\/\/www\.notion\.so\//i, "")
+      .replace(/[?#].*$/, "")
+      .trim();
   }
+
+  let savedUserId = safeGetItem(USER_ID_STORAGE_KEY);
+
+  if (!savedUserId) {
+    savedUserId = createUserId();
+    safeSetItem(USER_ID_STORAGE_KEY, savedUserId);
+  }
+
+  return savedUserId;
+}
 
   function isValidTheme(themeValue) {
     return THEMES.some((theme) => theme.value === themeValue);

@@ -85,6 +85,7 @@
 const assetParam = params.get("asset");
 const linkKeyParam = params.get("linkKey");
 const layoutParam = params.get("layout");
+const navModeParam = params.get("navMode");
 
   const app = document.getElementById("app");
 

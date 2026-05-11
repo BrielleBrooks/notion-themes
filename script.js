@@ -115,36 +115,50 @@
 
   const storageAvailable = canUseLocalStorage();
 
-  function safeGetItem(key) {
-    if (!storageAvailable) return null;
+  function getScopedStorageKey(key) {
+  const keysThatNeedScoping = [
+    STORAGE_THEME_KEY,
+    STORAGE_LINKS_KEY,
+    STORAGE_NOTION_MODE_KEY
+  ];
 
-    try {
-      return localStorage.getItem(key);
-    } catch (error) {
-      console.warn(`Could not read ${key}:`, error);
-      return null;
-    }
+  if (keysThatNeedScoping.includes(key)) {
+    return `${getUserId()}::${key}`;
   }
+
+  return key;
+}
+
+function safeGetItem(key) {
+  if (!storageAvailable) return null;
+
+  try {
+    return localStorage.getItem(getScopedStorageKey(key));
+  } catch (error) {
+    console.warn(`Could not read ${key}:`, error);
+    return null;
+  }
+}
 
   function safeSetItem(key, value) {
-    if (!storageAvailable) return;
+  if (!storageAvailable) return;
 
-    try {
-      localStorage.setItem(key, value);
-    } catch (error) {
-      console.warn(`Could not save ${key}:`, error);
-    }
+  try {
+    localStorage.setItem(getScopedStorageKey(key), value);
+  } catch (error) {
+    console.warn(`Could not save ${key}:`, error);
   }
+}
 
   function safeRemoveItem(key) {
-    if (!storageAvailable) return;
+  if (!storageAvailable) return;
 
-    try {
-      localStorage.removeItem(key);
-    } catch (error) {
-      console.warn(`Could not remove ${key}:`, error);
-    }
+  try {
+    localStorage.removeItem(getScopedStorageKey(key));
+  } catch (error) {
+    console.warn(`Could not remove ${key}:`, error);
   }
+}
 
   function createUserId() {
     return `rt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;

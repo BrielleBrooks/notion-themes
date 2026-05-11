@@ -82,9 +82,10 @@
 
   const params = new URLSearchParams(window.location.search);
   const type = params.get("type");
-  const assetParam = params.get("asset");
-  const linkKeyParam = params.get("linkKey");
-  const layoutParam = params.get("layout");
+const assetParam = params.get("asset");
+const linkKeyParam = params.get("linkKey");
+const layoutParam = params.get("layout");
+const openModeParam = params.get("openMode");
 
   const app = document.getElementById("app");
 
@@ -550,20 +551,25 @@ tbrlibrary=https://www.notion.so/..."
     }
 
     if (linkUrl) {
-      app.innerHTML = `
-        <div class="image-widget ${layoutClass}">
-          <a
-            class="image-link-button"
-            id="imageLink"
-            href="${escapeAttribute(linkUrl)}"
-            target="_top"
-            aria-label="Open ${escapeAttribute(linkKey)} page"
-          >
-            ${imageMarkup}
-          </a>
-        </div>
-      `;
-    } else {
+  const finalUrl =
+    openModeParam === "app"
+      ? linkUrl.replace(/^https:\/\//i, "notion://")
+      : linkUrl;
+
+  app.innerHTML = `
+    <div class="image-widget ${layoutClass}">
+      <a
+        class="image-link-button"
+        id="imageLink"
+        href="${escapeAttribute(finalUrl)}"
+        target="_top"
+        aria-label="Open ${escapeAttribute(linkKey)} page"
+      >
+        ${imageMarkup}
+      </a>
+    </div>
+  `;
+} else {
       app.innerHTML = `
         <div class="image-widget ${layoutClass}">
           ${imageMarkup}

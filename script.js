@@ -551,17 +551,12 @@ tbrlibrary=https://www.notion.so/..."
     }
 
     if (linkUrl) {
-  const finalUrl =
-    openModeParam === "app"
-      ? linkUrl.replace(/^https:\/\//i, "notion://")
-      : linkUrl;
-
   app.innerHTML = `
     <div class="image-widget ${layoutClass}">
       <a
         class="image-link-button"
         id="imageLink"
-        href="${escapeAttribute(finalUrl)}"
+        href="${escapeAttribute(linkUrl)}"
         target="_top"
         aria-label="Open ${escapeAttribute(linkKey)} page"
       >

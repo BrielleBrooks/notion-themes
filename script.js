@@ -223,46 +223,51 @@
       .trim() || "Theme image";
   }
 
-  function parseLinksTextarea(rawText) {
-    const links = {};
-    const warnings = [];
+ function parseLinksTextarea(rawText) {
+  const links = {};
+  const warnings = [];
 
-    const lines = String(rawText || "")
-      .split(/[\n,]+/g)
-      .map((line) => line.trim())
-      .filter(Boolean);
+  const lines = String(rawText || "")
+    .split(/[\n,]+/g)
+    .map((line) => line.trim())
+    .filter(Boolean);
 
-    lines.forEach((line, index) => {
-      const equalsIndex = line.indexOf("=");
+  lines.forEach((line, index) => {
+    const equalsIndex = line.indexOf("=");
 
-      if (equalsIndex === -1) {
-        warnings.push(`Line ${index + 1} skipped: missing "=".`);
-        return;
-      }
+    if (equalsIndex === -1) {
+      warnings.push(`Line ${index + 1} skipped: missing "=".`);
+      return;
+    }
 
-      const key = line.slice(0, equalsIndex).trim();
-      const url = line.slice(equalsIndex + 1).trim();
+    const key = line.slice(0, equalsIndex).trim();
+    const url = line.slice(equalsIndex + 1).trim();
 
-      if (!key || !url) {
-        warnings.push(`Line ${index + 1} skipped: missing key or URL.`);
-        return;
-      }
+    if (!key || !url) {
+      warnings.push(`Line ${index + 1} skipped: missing key or URL.`);
+      return;
+    }
 
-      if (!isValidLinkKey(key)) {
-        warnings.push(`Line ${index + 1} skipped: "${key}" is not a recognized key.`);
-        return;
-      }
+    if (!isValidLinkKey(key)) {
+      warnings.push(`Line ${index + 1} skipped: "${key}" is not a recognized key.`);
+      return;
+    }
 
-   if (!/^(https?:\/\/|notion:\/\/)/i.test(url)) {
-  warnings.push(`Line ${index + 1} skipped: URL must start with http://, https://, or notion://.`);
-  return;
+    const isAllowedUrl =
+      url.startsWith("https://") ||
+      url.startsWith("http://") ||
+      url.startsWith("notion://");
+
+    if (!isAllowedUrl) {
+      warnings.push(`Line ${index + 1} skipped: URL must start with http://, https://, or notion://.`);
+      return;
+    }
+
+    links[key] = url;
+  });
+
+  return { links, warnings };
 }
-
-      links[key] = url;
-    });
-
-    return { links, warnings };
-  }
 
   function linksToTextareaValue(linksObject) {
     const links = linksObject || {};

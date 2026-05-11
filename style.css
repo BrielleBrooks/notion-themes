@@ -355,3 +355,22 @@ body.image-mode .image-widget a {
 .status-message.warning {
   color: #ffd37a;
 }
+
+/* Clickable nav image widgets */
+.image-link-button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  line-height: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.image-link-button .theme-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}

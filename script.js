@@ -254,9 +254,10 @@
     }
 
     const isAllowedUrl =
-      url.startsWith("https://") ||
-      url.startsWith("http://") ||
-      url.startsWith("notion://");
+  url.startsWith("https://") ||
+  url.startsWith("http://") ||
+  url.startsWith("notion://") ||
+  url.startsWith("/");
 
     if (!isAllowedUrl) {
       warnings.push(`Line ${index + 1} skipped: URL must start with http://, https://, or notion://.`);

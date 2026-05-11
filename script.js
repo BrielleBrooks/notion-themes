@@ -679,23 +679,33 @@ tbrlibrary=https://www.notion.so/..."
 
     if (linkUrl) {
   const finalUrl = linkUrl;
-  const linkTarget = navModeParam === "newtab" ? "_blank" : "_top";
 
   app.innerHTML = `
     <div class="image-widget ${layoutClass}">
       <a
-        <a
-  class="image-link-button"
-  id="imageLink"
-  href="${escapeAttribute(finalUrl)}"
-  target="_top"
-  rel="noopener noreferrer"
-  aria-label="Open ${escapeAttribute(linkKey)} page"
->
+        class="image-link-button"
+        id="imageLink"
+        href="${escapeAttribute(finalUrl)}"
+        target="_top"
+        rel="noopener noreferrer"
+        aria-label="Open ${escapeAttribute(linkKey)} page"
+      >
         ${imageMarkup}
       </a>
     </div>
   `;
+
+  const linkElement = document.getElementById("imageLink");
+
+  if (linkElement) {
+    linkElement.addEventListener("click", () => {
+      setTimeout(() => {
+        if (document.visibilityState === "visible") {
+          window.open(finalUrl, "_blank");
+        }
+      }, 350);
+    });
+  }
 } else {
       app.innerHTML = `
         <div class="image-widget ${layoutClass}">

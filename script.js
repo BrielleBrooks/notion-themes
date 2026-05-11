@@ -81,12 +81,11 @@
   ];
 
   const params = new URLSearchParams(window.location.search);
-  const type = params.get("type");
+ const type = params.get("type");
 const assetParam = params.get("asset");
 const linkKeyParam = params.get("linkKey");
 const layoutParam = params.get("layout");
-const openModeParam = params.get("openMode");
-  const navModeParam = params.get("navMode");
+const directLinkParam = params.get("link");
 
   const app = document.getElementById("app");
 
@@ -533,7 +532,7 @@ tbrlibrary=https://www.notion.so/..."
     const selectedTheme = getSavedTheme();
     const links = getSavedLinks();
     const linkKey = String(linkKeyParam || "").trim();
-    const linkUrl = linkKey && links[linkKey] ? links[linkKey] : "";
+    const linkUrl = directLinkParam || (linkKey && links[linkKey] ? links[linkKey] : "");
     const imageSrc = getAssetPath(selectedTheme, assetName);
     const altText = assetToAltText(assetName);
     const layoutClass = layoutParam === "heading" ? "heading-layout" : "";

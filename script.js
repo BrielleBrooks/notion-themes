@@ -253,10 +253,10 @@
         return;
       }
 
-      if (!/^https?:\/\//i.test(url)) {
-        warnings.push(`Line ${index + 1} skipped: URL must start with http:// or https://.`);
-        return;
-      }
+   if (!/^(https?:\/\/|notion:\/\/)/i.test(url)) {
+  warnings.push(`Line ${index + 1} skipped: URL must start with http://, https://, or notion://.`);
+  return;
+}
 
       links[key] = url;
     });

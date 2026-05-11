@@ -684,13 +684,14 @@ tbrlibrary=https://www.notion.so/..."
   app.innerHTML = `
     <div class="image-widget ${layoutClass}">
       <a
-        class="image-link-button"
-        id="imageLink"
-        href="${escapeAttribute(finalUrl)}"
-        target="${linkTarget}"
-        rel="noopener noreferrer"
-        aria-label="Open ${escapeAttribute(linkKey)} page"
-      >
+        <a
+  class="image-link-button"
+  id="imageLink"
+  href="${escapeAttribute(finalUrl)}"
+  target="_top"
+  rel="noopener noreferrer"
+  aria-label="Open ${escapeAttribute(linkKey)} page"
+>
         ${imageMarkup}
       </a>
     </div>
@@ -704,6 +705,22 @@ tbrlibrary=https://www.notion.so/..."
     }
 
     const img = document.getElementById("themeImage");
+
+    const linkElement = document.getElementById("imageLink");
+
+if (linkElement) {
+  linkElement.addEventListener("click", () => {
+    const startTime = Date.now();
+
+    setTimeout(() => {
+      const elapsed = Date.now() - startTime;
+
+      if (elapsed >= 300 && document.visibilityState === "visible") {
+        window.open(finalUrl, "_blank");
+      }
+    }, 350);
+  });
+}
 
     if (!img) return;
 

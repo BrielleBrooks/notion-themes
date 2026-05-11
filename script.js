@@ -92,6 +92,7 @@
   let lastThemeSnapshot = "";
   let lastLinksSnapshot = "";
   let lastNotionModeSnapshot = "";
+  let controlEventsBound = false;
 
   function canUseLocalStorage() {
     try {
@@ -230,9 +231,9 @@
     const warnings = [];
 
     const lines = String(rawText || "")
-  .split(/[\n,]+/g)
-  .map((line) => line.trim())
-  .filter(Boolean);
+      .split(/[\n,]+/g)
+      .map((line) => line.trim())
+      .filter(Boolean);
 
     lines.forEach((line, index) => {
       const equalsIndex = line.indexOf("=");
@@ -270,9 +271,7 @@
     const links = linksObject || {};
 
     return VALID_LINK_KEYS
-      .map((key) => {
-        return links[key] ? `${key}=${links[key]}` : "";
-      })
+      .map((key) => (links[key] ? `${key}=${links[key]}` : ""))
       .filter(Boolean)
       .join("\n");
   }
@@ -450,58 +449,63 @@ tbrlibrary=https://www.notion.so/..."
     applyNotionMode(notionMode);
   }
 
-function bindControlEvents() {
-  const textarea = document.getElementById("linksTextarea");
-  const saveBtn = document.getElementById("saveSettingsBtn");
-  const resetBtn = document.getElementById("resetSettingsBtn");
+  function bindControlEvents() {
+    if (controlEventsBound) return;
+    controlEventsBound = true;
 
-  document.addEventListener("click", (event) => {
-    const themeButton = event.target.closest(".theme-pill");
+    document.addEventListener("click", (event) => {
+      const themeButton = event.target.closest(".theme-pill");
 
-    if (themeButton) {
-      const selectedTheme = themeButton.dataset.theme;
+      if (themeButton) {
+        const selectedTheme = themeButton.dataset.theme;
 
-      saveTheme(selectedTheme);
-      renderThemePills(selectedTheme);
+        saveTheme(selectedTheme);
+        renderThemePills(selectedTheme);
+        showStatus("Theme saved. Your image widgets should update automatically.", "success");
+        return;
+      }
 
-      showStatus("Theme saved. Your image widgets should update automatically.", "success");
-      return;
-    }
+      const modeButton = event.target.closest(".mode-pill");
 
-    const modeButton = event.target.closest(".mode-pill");
+      if (modeButton) {
+        const selectedMode = modeButton.dataset.mode;
 
-    if (modeButton) {
-      const selectedMode = modeButton.dataset.mode;
+        saveNotionMode(selectedMode);
+        renderModePills(selectedMode);
+        showStatus(`Notion ${selectedMode} mode saved.`, "success");
+        return;
+      }
 
-      saveNotionMode(selectedMode);
-      renderModePills(selectedMode);
+      const saveBtn = event.target.closest("#saveSettingsBtn");
 
-      showStatus(`Notion ${selectedMode} mode saved.`, "success");
-    }
-  });
+      if (saveBtn) {
+        const textarea = document.getElementById("linksTextarea");
+        const { links, warnings } = parseLinksTextarea(textarea ? textarea.value : "");
 
-  saveBtn.addEventListener("click", () => {
-    const { links, warnings } = parseLinksTextarea(textarea.value);
+        saveLinks(links);
 
-    saveLinks(links);
+        if (warnings.length) {
+          showStatus(`Saved with ${warnings.length} warning${warnings.length === 1 ? "" : "s"}. Check your link format.`, "warning");
+          console.warn("Theme widget link warnings:", warnings);
+        } else {
+          showStatus("Settings saved successfully.", "success");
+        }
 
-    if (warnings.length) {
-      showStatus(`Saved with ${warnings.length} warning${warnings.length === 1 ? "" : "s"}. Check your link format.`, "warning");
-      console.warn("Theme widget link warnings:", warnings);
-    } else {
-      showStatus("Settings saved successfully.", "success");
-    }
-  });
+        return;
+      }
 
-  resetBtn.addEventListener("click", () => {
-    safeRemoveItem(STORAGE_THEME_KEY);
-    safeRemoveItem(STORAGE_LINKS_KEY);
-    safeRemoveItem(STORAGE_NOTION_MODE_KEY);
-    refreshControlFromStorage();
-    broadcastSync();
-    showStatus("Settings reset to default.", "warning");
-  });
-}
+      const resetBtn = event.target.closest("#resetSettingsBtn");
+
+      if (resetBtn) {
+        safeRemoveItem(STORAGE_THEME_KEY);
+        safeRemoveItem(STORAGE_LINKS_KEY);
+        safeRemoveItem(STORAGE_NOTION_MODE_KEY);
+        refreshControlFromStorage();
+        broadcastSync();
+        showStatus("Settings reset to default.", "warning");
+      }
+    });
+  }
 
   function showStatus(message, typeName = "") {
     const status = document.getElementById("statusMessage");
@@ -517,82 +521,88 @@ function bindControlEvents() {
     }, 4200);
   }
 
-function renderImageWidget() {
-  document.body.classList.remove("control-mode");
-  document.body.classList.add("image-mode");
+  function renderImageWidget() {
+    document.body.classList.remove("control-mode");
+    document.body.classList.add("image-mode");
 
-  applyNotionMode();
+    applyNotionMode();
 
-  const assetName = cleanAssetName(assetParam);
+    const assetName = cleanAssetName(assetParam);
 
-  if (!assetName) {
-    console.warn("Theme image widget missing asset parameter.");
-    app.innerHTML = `<div class="quiet-error"></div>`;
-    return;
-  }
-
-  if (!VALID_ASSETS.includes(assetName)) {
-    console.warn(`Unknown asset requested: ${assetName}. Attempting to load anyway.`);
-  }
-
-  const selectedTheme = getSavedTheme();
-  const links = getSavedLinks();
-  const linkKey = String(linkKeyParam || "").trim();
-  const linkUrl = linkKey && links[linkKey] ? links[linkKey] : "";
-  const imageSrc = getAssetPath(selectedTheme, assetName);
-  const altText = assetToAltText(assetName);
-  const layoutClass = layoutParam === "heading" ? "heading-layout" : "";
-
-  const imageMarkup = `
-    <img
-      class="theme-image ${linkUrl ? "clickable" : ""}"
-      id="themeImage"
-      src="${imageSrc}"
-      alt="${escapeHtml(altText)}"
-    />
-  `;
-
-  if (linkKey && !isValidLinkKey(linkKey)) {
-    console.warn(`Unknown linkKey requested: ${linkKey}`);
-  }
-
-  if (linkUrl) {
-    app.innerHTML = `
-      <div class="image-widget ${layoutClass}">
-        <button
-          class="image-link-button"
-          id="imageLink"
-          type="button"
-          aria-label="Open ${escapeAttribute(linkKey)} page"
-        >
-          ${imageMarkup}
-        </button>
-      </div>
-    `;
-
-    const imageLink = document.getElementById("imageLink");
-
-    imageLink.addEventListener("click", () => {
-      window.top.location.href = linkUrl;
-    });
-  } else {
-    app.innerHTML = `
-      <div class="image-widget ${layoutClass}">
-        ${imageMarkup}
-      </div>
-    `;
-  }
-
-  const img = document.getElementById("themeImage");
-
-  img.addEventListener("error", () => {
-    console.warn(`Could not load image: ${imageSrc}`);
-
-    if (selectedTheme !== DEFAULT_THEME) {
-      img.src = getAssetPath(DEFAULT_THEME, assetName);
+    if (!assetName) {
+      console.warn("Theme image widget missing asset parameter.");
+      app.innerHTML = `<div class="quiet-error"></div>`;
+      return;
     }
-  });
-}
+
+    if (!VALID_ASSETS.includes(assetName)) {
+      console.warn(`Unknown asset requested: ${assetName}. Attempting to load anyway.`);
+    }
+
+    const selectedTheme = getSavedTheme();
+    const links = getSavedLinks();
+    const linkKey = String(linkKeyParam || "").trim();
+    const linkUrl = linkKey && links[linkKey] ? links[linkKey] : "";
+    const imageSrc = getAssetPath(selectedTheme, assetName);
+    const altText = assetToAltText(assetName);
+    const layoutClass = layoutParam === "heading" ? "heading-layout" : "";
+
+    const imageMarkup = `
+      <img
+        class="theme-image ${linkUrl ? "clickable" : ""}"
+        id="themeImage"
+        src="${imageSrc}"
+        alt="${escapeHtml(altText)}"
+      />
+    `;
+
+    if (linkKey && !isValidLinkKey(linkKey)) {
+      console.warn(`Unknown linkKey requested: ${linkKey}`);
+    }
+
+    if (linkUrl) {
+      app.innerHTML = `
+        <div class="image-widget ${layoutClass}">
+          <button
+            class="image-link-button"
+            id="imageLink"
+            type="button"
+            aria-label="Open ${escapeAttribute(linkKey)} page"
+          >
+            ${imageMarkup}
+          </button>
+        </div>
+      `;
+
+      const imageLink = document.getElementById("imageLink");
+
+      imageLink.addEventListener("click", () => {
+        try {
+          window.top.location.href = linkUrl;
+        } catch (error) {
+          window.location.href = linkUrl;
+        }
+      });
+    } else {
+      app.innerHTML = `
+        <div class="image-widget ${layoutClass}">
+          ${imageMarkup}
+        </div>
+      `;
+    }
+
+    const img = document.getElementById("themeImage");
+
+    if (!img) return;
+
+    img.addEventListener("error", () => {
+      console.warn(`Could not load image: ${imageSrc}`);
+
+      if (selectedTheme !== DEFAULT_THEME) {
+        img.src = getAssetPath(DEFAULT_THEME, assetName);
+      }
+    });
+  }
 
   function escapeHtml(value) {
     return String(value)

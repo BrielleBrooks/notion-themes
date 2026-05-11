@@ -517,82 +517,82 @@ function bindControlEvents() {
     }, 4200);
   }
 
-  function renderImageWidget() {
-    document.body.classList.remove("control-mode");
-    document.body.classList.add("image-mode");
+function renderImageWidget() {
+  document.body.classList.remove("control-mode");
+  document.body.classList.add("image-mode");
 
-    applyNotionMode();
+  applyNotionMode();
 
-    const assetName = cleanAssetName(assetParam);
+  const assetName = cleanAssetName(assetParam);
 
-    if (!assetName) {
-      console.warn("Theme image widget missing asset parameter.");
-      app.innerHTML = `<div class="quiet-error"></div>`;
-      return;
-    }
+  if (!assetName) {
+    console.warn("Theme image widget missing asset parameter.");
+    app.innerHTML = `<div class="quiet-error"></div>`;
+    return;
+  }
 
-    if (!VALID_ASSETS.includes(assetName)) {
-      console.warn(`Unknown asset requested: ${assetName}. Attempting to load anyway.`);
-    }
+  if (!VALID_ASSETS.includes(assetName)) {
+    console.warn(`Unknown asset requested: ${assetName}. Attempting to load anyway.`);
+  }
 
-    const selectedTheme = getSavedTheme();
-    const links = getSavedLinks();
-    const linkKey = String(linkKeyParam || "").trim();
-    const linkUrl = linkKey && links[linkKey] ? links[linkKey] : "";
-    const imageSrc = getAssetPath(selectedTheme, assetName);
-    const altText = assetToAltText(assetName);
+  const selectedTheme = getSavedTheme();
+  const links = getSavedLinks();
+  const linkKey = String(linkKeyParam || "").trim();
+  const linkUrl = linkKey && links[linkKey] ? links[linkKey] : "";
+  const imageSrc = getAssetPath(selectedTheme, assetName);
+  const altText = assetToAltText(assetName);
+  const layoutClass = layoutParam === "heading" ? "heading-layout" : "";
 
-    const imageMarkup = `
-      <img
-        class="theme-image ${linkUrl ? "clickable" : ""}"
-        id="themeImage"
-        src="${imageSrc}"
-        alt="${escapeHtml(altText)}"
-      />
-    `;
-
-    if (linkKey && !isValidLinkKey(linkKey)) {
-      console.warn(`Unknown linkKey requested: ${linkKey}`);
-    }
-
-  if (linkUrl) {
-  app.innerHTML = `
-    <div class="image-widget ${layoutParam === "heading" ? "heading-layout" : ""}">
-      <button
-        class="image-link-button"
-        id="imageLink"
-        type="button"
-        aria-label="Open ${escapeAttribute(linkKey)} page"
-      >
-        ${imageMarkup}
-      </button>
-    </div>
+  const imageMarkup = `
+    <img
+      class="theme-image ${linkUrl ? "clickable" : ""}"
+      id="themeImage"
+      src="${imageSrc}"
+      alt="${escapeHtml(altText)}"
+    />
   `;
 
-  const imageLink = document.getElementById("imageLink");
+  if (linkKey && !isValidLinkKey(linkKey)) {
+    console.warn(`Unknown linkKey requested: ${linkKey}`);
+  }
 
-  imageLink.addEventListener("click", () => {
-    window.top.location.href = linkUrl;
+  if (linkUrl) {
+    app.innerHTML = `
+      <div class="image-widget ${layoutClass}">
+        <button
+          class="image-link-button"
+          id="imageLink"
+          type="button"
+          aria-label="Open ${escapeAttribute(linkKey)} page"
+        >
+          ${imageMarkup}
+        </button>
+      </div>
+    `;
+
+    const imageLink = document.getElementById("imageLink");
+
+    imageLink.addEventListener("click", () => {
+      window.top.location.href = linkUrl;
+    });
+  } else {
+    app.innerHTML = `
+      <div class="image-widget ${layoutClass}">
+        ${imageMarkup}
+      </div>
+    `;
+  }
+
+  const img = document.getElementById("themeImage");
+
+  img.addEventListener("error", () => {
+    console.warn(`Could not load image: ${imageSrc}`);
+
+    if (selectedTheme !== DEFAULT_THEME) {
+      img.src = getAssetPath(DEFAULT_THEME, assetName);
+    }
   });
 }
-    } else {
-      app.innerHTML = `
-        <div class="image-widget ${layoutParam === "heading" ? "heading-layout" : ""}">
-          ${imageMarkup}
-        </div>
-      `;
-    }
-
-    const img = document.getElementById("themeImage");
-
-    img.addEventListener("error", () => {
-      console.warn(`Could not load image: ${imageSrc}`);
-
-      if (selectedTheme !== DEFAULT_THEME) {
-        img.src = getAssetPath(DEFAULT_THEME, assetName);
-      }
-    });
-  }
 
   function escapeHtml(value) {
     return String(value)

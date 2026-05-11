@@ -664,28 +664,24 @@ tbrlibrary=https://www.notion.so/..."
     }
 
     if (linkUrl) {
-      const finalUrl =
-        navModeParam === "notionapp" || openModeParam === "app"
-          ? linkUrl.replace(/^https:\/\/www\.notion\.so\//i, "notion://www.notion.so/")
-          : linkUrl;
+  const finalUrl = linkUrl;
+  const linkTarget = navModeParam === "newtab" ? "_blank" : "_top";
 
-      const linkTarget = navModeParam === "newtab" ? "_blank" : "_top";
-
-      app.innerHTML = `
-        <div class="image-widget ${layoutClass}">
-          <a
-            class="image-link-button"
-            id="imageLink"
-            href="${escapeAttribute(finalUrl)}"
-            target="${linkTarget}"
-            rel="noopener noreferrer"
-            aria-label="Open ${escapeAttribute(linkKey)} page"
-          >
-            ${imageMarkup}
-          </a>
-        </div>
-      `;
-    } else {
+  app.innerHTML = `
+    <div class="image-widget ${layoutClass}">
+      <a
+        class="image-link-button"
+        id="imageLink"
+        href="${escapeAttribute(finalUrl)}"
+        target="${linkTarget}"
+        rel="noopener noreferrer"
+        aria-label="Open ${escapeAttribute(linkKey)} page"
+      >
+        ${imageMarkup}
+      </a>
+    </div>
+  `;
+} else {
       app.innerHTML = `
         <div class="image-widget ${layoutClass}">
           ${imageMarkup}

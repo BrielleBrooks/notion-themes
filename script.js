@@ -86,6 +86,7 @@ const assetParam = params.get("asset");
 const linkKeyParam = params.get("linkKey");
 const layoutParam = params.get("layout");
 const openModeParam = params.get("openMode");
+  const navModeParam = params.get("navMode");
 
   const app = document.getElementById("app");
 
@@ -551,13 +552,16 @@ tbrlibrary=https://www.notion.so/..."
     }
 
     if (linkUrl) {
+  const linkTarget = navModeParam === "newtab" ? "_blank" : "_top";
+
   app.innerHTML = `
     <div class="image-widget ${layoutClass}">
       <a
         class="image-link-button"
         id="imageLink"
         href="${escapeAttribute(linkUrl)}"
-        target="_top"
+        target="${linkTarget}"
+        rel="noopener noreferrer"
         aria-label="Open ${escapeAttribute(linkKey)} page"
       >
         ${imageMarkup}

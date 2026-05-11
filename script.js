@@ -552,6 +552,11 @@ tbrlibrary=https://www.notion.so/..."
     }
 
     if (linkUrl) {
+  const finalUrl =
+    navModeParam === "notionapp"
+      ? linkUrl.replace(/^https:\/\/www\.notion\.so\//i, "notion://www.notion.so/")
+      : linkUrl;
+
   const linkTarget = navModeParam === "newtab" ? "_blank" : "_top";
 
   app.innerHTML = `
@@ -559,7 +564,7 @@ tbrlibrary=https://www.notion.so/..."
       <a
         class="image-link-button"
         id="imageLink"
-        href="${escapeAttribute(linkUrl)}"
+        href="${escapeAttribute(finalUrl)}"
         target="${linkTarget}"
         rel="noopener noreferrer"
         aria-label="Open ${escapeAttribute(linkKey)} page"

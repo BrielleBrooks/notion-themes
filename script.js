@@ -4,7 +4,10 @@
   const STORAGE_THEME_KEY = "selectedTheme";
   const STORAGE_LINKS_KEY = "themeLinks";
   const STORAGE_NOTION_MODE_KEY = "notionMode";
+  const USER_ID_STORAGE_KEY = "notionThemeUserId";
   const CHANNEL_NAME = "reading-tracker-theme-sync";
+
+  const API_URL = "https://notion-theme-api.notionably.workers.dev/";
 
   const DEFAULT_THEME = "default";
   const DEFAULT_NOTION_MODE = "dark";
@@ -81,11 +84,13 @@
   ];
 
   const params = new URLSearchParams(window.location.search);
- const type = params.get("type");
-const assetParam = params.get("asset");
-const linkKeyParam = params.get("linkKey");
-const layoutParam = params.get("layout");
-const navModeParam = params.get("navMode");
+  const type = params.get("type");
+  const assetParam = params.get("asset");
+  const linkKeyParam = params.get("linkKey");
+  const layoutParam = params.get("layout");
+  const navModeParam = params.get("navMode");
+  const openModeParam = params.get("openMode");
+  const setupParam = params.get("setup");
 
   const app = document.getElementById("app");
 
@@ -94,6 +99,7 @@ const navModeParam = params.get("navMode");
   let lastLinksSnapshot = "";
   let lastNotionModeSnapshot = "";
   let controlEventsBound = false;
+  let cloudLoaded = false;
 
   function canUseLocalStorage() {
     try {
@@ -111,6 +117,7 @@ const navModeParam = params.get("navMode");
 
   function safeGetItem(key) {
     if (!storageAvailable) return null;
+
     try {
       return localStorage.getItem(key);
     } catch (error) {
@@ -121,6 +128,7 @@ const navModeParam = params.get("navMode");
 
   function safeSetItem(key, value) {
     if (!storageAvailable) return;
+
     try {
       localStorage.setItem(key, value);
     } catch (error) {
@@ -130,11 +138,31 @@ const navModeParam = params.get("navMode");
 
   function safeRemoveItem(key) {
     if (!storageAvailable) return;
+
     try {
       localStorage.removeItem(key);
     } catch (error) {
       console.warn(`Could not remove ${key}:`, error);
     }
+  }
+
+  function createUserId() {
+    return `rt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  function getUserId() {
+    if (setupParam && setupParam.trim()) {
+      return setupParam.trim();
+    }
+
+    let savedUserId = safeGetItem(USER_ID_STORAGE_KEY);
+
+    if (!savedUserId) {
+      savedUserId = createUserId();
+      safeSetItem(USER_ID_STORAGE_KEY, savedUserId);
+    }
+
+    return savedUserId;
   }
 
   function isValidTheme(themeValue) {
@@ -168,10 +196,86 @@ const navModeParam = params.get("navMode");
     }
   }
 
+  function getCurrentSettings() {
+    return {
+      userId: getUserId(),
+      theme: getSavedTheme(),
+      notionMode: getSavedNotionMode(),
+      links: getSavedLinks()
+    };
+  }
+
+  function applySettingsToLocal(settings = {}) {
+    if (settings.theme && isValidTheme(settings.theme)) {
+      safeSetItem(STORAGE_THEME_KEY, settings.theme);
+    }
+
+    if (settings.notionMode === "light" || settings.notionMode === "dark") {
+      safeSetItem(STORAGE_NOTION_MODE_KEY, settings.notionMode);
+    }
+
+    if (settings.links && typeof settings.links === "object") {
+      safeSetItem(STORAGE_LINKS_KEY, JSON.stringify(settings.links));
+    }
+
+    applyNotionMode();
+  }
+
+  async function loadCloudSettings() {
+    const userId = getUserId();
+
+    try {
+      const response = await fetch(`${API_URL}?userId=${encodeURIComponent(userId)}`, {
+        method: "GET"
+      });
+
+      if (!response.ok) {
+        throw new Error(`Cloud load failed: ${response.status}`);
+      }
+
+      const settings = await response.json();
+
+      if (settings && Object.keys(settings).length > 0) {
+        applySettingsToLocal(settings);
+      }
+
+      cloudLoaded = true;
+      return settings;
+    } catch (error) {
+      console.warn("Could not load cloud settings. Using local fallback:", error);
+      cloudLoaded = false;
+      return null;
+    }
+  }
+
+  async function saveCloudSettings() {
+    const settings = getCurrentSettings();
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(settings)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Cloud save failed: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.warn("Could not save cloud settings. Local backup still saved:", error);
+      return null;
+    }
+  }
+
   function saveTheme(themeValue) {
     const cleanTheme = isValidTheme(themeValue) ? themeValue : DEFAULT_THEME;
     safeSetItem(STORAGE_THEME_KEY, cleanTheme);
     broadcastSync();
+    saveCloudSettings();
   }
 
   function saveNotionMode(modeValue) {
@@ -179,11 +283,23 @@ const navModeParam = params.get("navMode");
     safeSetItem(STORAGE_NOTION_MODE_KEY, cleanMode);
     applyNotionMode(cleanMode);
     broadcastSync();
+    saveCloudSettings();
   }
 
   function saveLinks(linksObject) {
     safeSetItem(STORAGE_LINKS_KEY, JSON.stringify(linksObject || {}));
     broadcastSync();
+    saveCloudSettings();
+  }
+
+  function resetSettings() {
+    safeSetItem(STORAGE_THEME_KEY, DEFAULT_THEME);
+    safeSetItem(STORAGE_NOTION_MODE_KEY, DEFAULT_NOTION_MODE);
+    safeSetItem(STORAGE_LINKS_KEY, JSON.stringify({}));
+
+    applyNotionMode(DEFAULT_NOTION_MODE);
+    broadcastSync();
+    saveCloudSettings();
   }
 
   function applyNotionMode(modeValue = getSavedNotionMode()) {
@@ -224,41 +340,41 @@ const navModeParam = params.get("navMode");
       .trim() || "Theme image";
   }
 
-function parseLinksTextarea(rawText) {
-  const links = {};
-  const warnings = [];
+  function parseLinksTextarea(rawText) {
+    const links = {};
+    const warnings = [];
 
-  const lines = String(rawText || "")
-    .split(/[\n,]+/g)
-    .map((line) => line.trim())
-    .filter(Boolean);
+    const lines = String(rawText || "")
+      .split(/[\n,]+/g)
+      .map((line) => line.trim())
+      .filter(Boolean);
 
-  lines.forEach((line, index) => {
-    const equalsIndex = line.indexOf("=");
+    lines.forEach((line, index) => {
+      const equalsIndex = line.indexOf("=");
 
-    if (equalsIndex === -1) {
-      warnings.push(`Line ${index + 1} skipped: missing "=".`);
-      return;
-    }
+      if (equalsIndex === -1) {
+        warnings.push(`Line ${index + 1} skipped: missing "=".`);
+        return;
+      }
 
-    const key = line.slice(0, equalsIndex).trim();
-    const url = line.slice(equalsIndex + 1).trim();
+      const key = line.slice(0, equalsIndex).trim();
+      const url = line.slice(equalsIndex + 1).trim();
 
-    if (!key || !url) {
-      warnings.push(`Line ${index + 1} skipped: missing key or URL.`);
-      return;
-    }
+      if (!key || !url) {
+        warnings.push(`Line ${index + 1} skipped: missing key or URL.`);
+        return;
+      }
 
-    if (!isValidLinkKey(key)) {
-      warnings.push(`Line ${index + 1} skipped: "${key}" is not a recognized key.`);
-      return;
-    }
+      if (!isValidLinkKey(key)) {
+        warnings.push(`Line ${index + 1} skipped: "${key}" is not a recognized key.`);
+        return;
+      }
 
-    links[key] = url;
-  });
+      links[key] = url;
+    });
 
-  return { links, warnings };
-}
+    return { links, warnings };
+  }
 
   function linksToTextareaValue(linksObject) {
     const links = linksObject || {};
@@ -452,7 +568,7 @@ tbrlibrary=https://www.notion.so/..."
         const selectedTheme = themeButton.dataset.theme;
         saveTheme(selectedTheme);
         renderThemePills(selectedTheme);
-        showStatus("Theme saved. Your image widgets should update automatically.", "success");
+        showStatus("Theme saved and synced.", "success");
         return;
       }
 
@@ -462,7 +578,7 @@ tbrlibrary=https://www.notion.so/..."
         const selectedMode = modeButton.dataset.mode;
         saveNotionMode(selectedMode);
         renderModePills(selectedMode);
-        showStatus(`Notion ${selectedMode} mode saved.`, "success");
+        showStatus(`Notion ${selectedMode} mode saved and synced.`, "success");
         return;
       }
 
@@ -478,7 +594,7 @@ tbrlibrary=https://www.notion.so/..."
           showStatus(`Saved with ${warnings.length} warning${warnings.length === 1 ? "" : "s"}. Check your link format.`, "warning");
           console.warn("Theme widget link warnings:", warnings);
         } else {
-          showStatus("Settings saved successfully.", "success");
+          showStatus("Settings saved and synced successfully.", "success");
         }
 
         return;
@@ -487,12 +603,9 @@ tbrlibrary=https://www.notion.so/..."
       const resetBtn = event.target.closest("#resetSettingsBtn");
 
       if (resetBtn) {
-        safeRemoveItem(STORAGE_THEME_KEY);
-        safeRemoveItem(STORAGE_LINKS_KEY);
-        safeRemoveItem(STORAGE_NOTION_MODE_KEY);
+        resetSettings();
         refreshControlFromStorage();
-        broadcastSync();
-        showStatus("Settings reset to default.", "warning");
+        showStatus("Settings reset and synced.", "warning");
       }
     });
   }
@@ -551,28 +664,28 @@ tbrlibrary=https://www.notion.so/..."
     }
 
     if (linkUrl) {
-  const finalUrl =
-    navModeParam === "notionapp"
-      ? linkUrl.replace(/^https:\/\/www\.notion\.so\//i, "notion://www.notion.so/")
-      : linkUrl;
+      const finalUrl =
+        navModeParam === "notionapp" || openModeParam === "app"
+          ? linkUrl.replace(/^https:\/\/www\.notion\.so\//i, "notion://www.notion.so/")
+          : linkUrl;
 
-  const linkTarget = navModeParam === "newtab" ? "_blank" : "_top";
+      const linkTarget = navModeParam === "newtab" ? "_blank" : "_top";
 
-  app.innerHTML = `
-    <div class="image-widget ${layoutClass}">
-      <a
-        class="image-link-button"
-        id="imageLink"
-        href="${escapeAttribute(finalUrl)}"
-        target="${linkTarget}"
-        rel="noopener noreferrer"
-        aria-label="Open ${escapeAttribute(linkKey)} page"
-      >
-        ${imageMarkup}
-      </a>
-    </div>
-  `;
-} else {
+      app.innerHTML = `
+        <div class="image-widget ${layoutClass}">
+          <a
+            class="image-link-button"
+            id="imageLink"
+            href="${escapeAttribute(finalUrl)}"
+            target="${linkTarget}"
+            rel="noopener noreferrer"
+            aria-label="Open ${escapeAttribute(linkKey)} page"
+          >
+            ${imageMarkup}
+          </a>
+        </div>
+      `;
+    } else {
       app.innerHTML = `
         <div class="image-widget ${layoutClass}">
           ${imageMarkup}
@@ -606,10 +719,12 @@ tbrlibrary=https://www.notion.so/..."
     return escapeHtml(value);
   }
 
-  function init() {
+  async function init() {
     initBroadcastChannel();
     startStorageListeners();
     applyNotionMode();
+
+    await loadCloudSettings();
 
     if (type === "control") {
       renderControlPanel();

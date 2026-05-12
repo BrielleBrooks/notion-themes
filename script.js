@@ -265,31 +265,54 @@ function safeGetItem(key) {
   }
 
   async function loadCloudSettings() {
-    const userId = getUserId();
+  try {
+    const existingLinks = getSavedLinks();
 
-    try {
-      const response = await fetch(`${API_URL}?userId=${encodeURIComponent(userId)}`, {
-        method: "GET"
-      });
+    const primaryLink =
+      existingLinks.home || existingLinks.settings;
 
-      if (!response.ok) {
-        throw new Error(`Cloud load failed: ${response.status}`);
-      }
+    let fetchUrl = "";
 
-      const settings = await response.json();
+    if (primaryLink) {
+      const pageId = extractNotionPageId(primaryLink);
 
-      if (settings && Object.keys(settings).length > 0) {
-        applySettingsToLocal(settings);
-      }
+      fetchUrl =
+        `${API_URL}?pageId=${encodeURIComponent(pageId)}`;
+    } else {
+      const userId = getUserId();
 
-      cloudLoaded = true;
-      return settings;
-    } catch (error) {
-      console.warn("Could not load cloud settings. Using local fallback:", error);
-      cloudLoaded = false;
-      return null;
+      fetchUrl =
+        `${API_URL}?userId=${encodeURIComponent(userId)}`;
     }
+
+    const response = await fetch(fetchUrl, {
+      method: "GET"
+    });
+
+    if (!response.ok) {
+      throw new Error(`Cloud load failed: ${response.status}`);
+    }
+
+    const settings = await response.json();
+
+    if (settings && Object.keys(settings).length > 0) {
+      applySettingsToLocal(settings);
+    }
+
+    cloudLoaded = true;
+
+    return settings;
+  } catch (error) {
+    console.warn(
+      "Could not load cloud settings. Using local fallback:",
+      error
+    );
+
+    cloudLoaded = false;
+
+    return null;
   }
+}
 
   async function saveCloudSettings() {
     const settings = getCurrentSettings();

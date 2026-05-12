@@ -174,22 +174,38 @@ function safeGetItem(key) {
 }
 
   function getUserId() {
-  const savedLinks = getSavedLinks();
+  let savedUserId = localStorage.getItem(USER_ID_STORAGE_KEY);
 
-  const primaryLink = savedLinks.home || savedLinks.settings;
-
-  if (primaryLink) {
-    return extractNotionPageId(primaryLink);
+  if (savedUserId) {
+    return savedUserId;
   }
 
-  let savedUserId = safeGetItem(USER_ID_STORAGE_KEY);
+  const rawLinks = localStorage.getItem(STORAGE_LINKS_KEY);
 
-  if (!savedUserId) {
-    savedUserId = createUserId();
-    safeSetItem(USER_ID_STORAGE_KEY, savedUserId);
+  if (rawLinks) {
+    try {
+      const parsedLinks = JSON.parse(rawLinks);
+
+      const primaryLink =
+        parsedLinks.home || parsedLinks.settings;
+
+      if (primaryLink) {
+        const extractedId = extractNotionPageId(primaryLink);
+
+        localStorage.setItem(USER_ID_STORAGE_KEY, extractedId);
+
+        return extractedId;
+      }
+    } catch (error) {
+      console.warn("Could not parse links for user ID:", error);
+    }
   }
 
-  return savedUserId;
+  const newId = createUserId();
+
+  localStorage.setItem(USER_ID_STORAGE_KEY, newId);
+
+  return newId;
 }
 
   function isValidTheme(themeValue) {

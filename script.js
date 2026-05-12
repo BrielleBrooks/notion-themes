@@ -29,15 +29,16 @@
   ];
 
   const VALID_LINK_KEYS = [
-    "home",
-    "library",
-    "tbrlibrary",
-    "readingnowlibrary",
-    "serieslibrary",
-    "moodreader",
-    "readinggoals",
-    "readinginsights"
-  ];
+  "settings",
+  "home",
+  "library",
+  "tbrlibrary",
+  "readingnowlibrary",
+  "serieslibrary",
+  "moodreader",
+  "readinggoals",
+  "readinginsights"
+];
 
   const VALID_ASSETS = [
     "homenav.png",
@@ -164,14 +165,22 @@ function safeGetItem(key) {
     return `rt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
   }
 
+  function extractNotionPageId(urlValue) {
+  return String(urlValue || "")
+    .replace(/^https:\/\/www\.notion\.so\//i, "")
+    .replace(/^http:\/\/www\.notion\.so\//i, "")
+    .replace(/^notion:\/\/www\.notion\.so\//i, "")
+    .replace(/[?#].*$/, "")
+    .trim();
+}
+
   function getUserId() {
   const savedLinks = getSavedLinks();
 
-  if (savedLinks.home) {
-    return savedLinks.home
-      .replace(/^https:\/\/www\.notion\.so\//i, "")
-      .replace(/[?#].*$/, "")
-      .trim();
+  const primaryLink = savedLinks.home || savedLinks.settings;
+
+  if (primaryLink) {
+    return extractNotionPageId(primaryLink);
   }
 
   let savedUserId = safeGetItem(USER_ID_STORAGE_KEY);

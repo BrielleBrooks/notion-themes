@@ -29,16 +29,16 @@
   ];
 
   const VALID_LINK_KEYS = [
-  "settings",
-  "home",
-  "library",
-  "tbrlibrary",
-  "readingnowlibrary",
-  "serieslibrary",
-  "moodreader",
-  "readinggoals",
-  "readinginsights"
-];
+    "settings",
+    "home",
+    "library",
+    "tbrlibrary",
+    "readingnowlibrary",
+    "serieslibrary",
+    "moodreader",
+    "readinggoals",
+    "readinginsights"
+  ];
 
   const VALID_ASSETS = [
     "homenav.png",
@@ -90,8 +90,6 @@
   const linkKeyParam = params.get("linkKey");
   const layoutParam = params.get("layout");
   const navModeParam = params.get("navMode");
-  const openModeParam = params.get("openMode");
-  const setupParam = params.get("setup");
 
   const app = document.getElementById("app");
 
@@ -116,97 +114,160 @@
 
   const storageAvailable = canUseLocalStorage();
 
-  function getScopedStorageKey(key) {
-  const keysThatNeedScoping = [
-    STORAGE_THEME_KEY,
-    STORAGE_NOTION_MODE_KEY
-  ];
+  function rawGetItem(key) {
+    if (!storageAvailable) return null;
 
-  if (keysThatNeedScoping.includes(key)) {
-    return `${getUserId()}::${key}`;
+    try {
+      return localStorage.getItem(key);
+    } catch (error) {
+      console.warn(`Could not raw-read ${key}:`, error);
+      return null;
+    }
   }
 
-  return key;
-}
+  function rawSetItem(key, value) {
+    if (!storageAvailable) return;
 
-function safeGetItem(key) {
-  if (!storageAvailable) return null;
-
-  try {
-    return localStorage.getItem(getScopedStorageKey(key));
-  } catch (error) {
-    console.warn(`Could not read ${key}:`, error);
-    return null;
+    try {
+      localStorage.setItem(key, value);
+    } catch (error) {
+      console.warn(`Could not raw-save ${key}:`, error);
+    }
   }
-}
 
-  function safeSetItem(key, value) {
-  if (!storageAvailable) return;
+  function rawRemoveItem(key) {
+    if (!storageAvailable) return;
 
-  try {
-    localStorage.setItem(getScopedStorageKey(key), value);
-  } catch (error) {
-    console.warn(`Could not save ${key}:`, error);
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.warn(`Could not raw-remove ${key}:`, error);
+    }
   }
-}
-
-  function safeRemoveItem(key) {
-  if (!storageAvailable) return;
-
-  try {
-    localStorage.removeItem(getScopedStorageKey(key));
-  } catch (error) {
-    console.warn(`Could not remove ${key}:`, error);
-  }
-}
 
   function createUserId() {
     return `rt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
   }
 
   function extractNotionPageId(urlValue) {
-  return String(urlValue || "")
-    .replace(/^https:\/\/www\.notion\.so\//i, "")
-    .replace(/^http:\/\/www\.notion\.so\//i, "")
-    .replace(/^notion:\/\/www\.notion\.so\//i, "")
-    .replace(/[?#].*$/, "")
-    .trim();
-}
+    const value = decodeURIComponent(String(urlValue || "")).trim();
+    const compactValue = value.replace(/-/g, "");
+    const pageIdMatch = compactValue.match(/[0-9a-f]{32}/i);
 
-  function getUserId() {
-  let savedUserId = localStorage.getItem(USER_ID_STORAGE_KEY);
+    if (pageIdMatch) {
+      return pageIdMatch[0].toLowerCase();
+    }
 
-  if (savedUserId) {
-    return savedUserId;
+    return value
+      .replace(/^https:\/\/www\.notion\.so\//i, "")
+      .replace(/^http:\/\/www\.notion\.so\//i, "")
+      .replace(/^notion:\/\/www\.notion\.so\//i, "")
+      .replace(/[?#].*$/, "")
+      .trim()
+      .toLowerCase();
   }
 
-  const rawLinks = localStorage.getItem(STORAGE_LINKS_KEY);
+  function getCurrentNotionPageId() {
+    const candidates = [
+      document.referrer,
+      window.location.href
+    ];
 
-  if (rawLinks) {
-    try {
-      const parsedLinks = JSON.parse(rawLinks);
+    for (const candidate of candidates) {
+      const pageId = extractNotionPageId(candidate);
 
-      const primaryLink =
-        parsedLinks.home || parsedLinks.settings;
-
-      if (primaryLink) {
-        const extractedId = extractNotionPageId(primaryLink);
-
-        localStorage.setItem(USER_ID_STORAGE_KEY, extractedId);
-
-        return extractedId;
+      if (pageId && /^[0-9a-f]{32}$/i.test(pageId)) {
+        return pageId;
       }
+    }
+
+    return "";
+  }
+
+  function getRawSavedLinks() {
+    const raw = rawGetItem(STORAGE_LINKS_KEY);
+    if (!raw) return {};
+
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
     } catch (error) {
-      console.warn("Could not parse links for user ID:", error);
+      console.warn("Raw saved links were invalid JSON:", error);
+      return {};
     }
   }
 
-  const newId = createUserId();
+  function getUserId() {
+    const savedUserId = rawGetItem(USER_ID_STORAGE_KEY);
 
-  localStorage.setItem(USER_ID_STORAGE_KEY, newId);
+    if (savedUserId) {
+      return savedUserId;
+    }
 
-  return newId;
-}
+    const rawLinks = getRawSavedLinks();
+    const primaryLink = rawLinks.home || rawLinks.settings;
+
+    if (primaryLink) {
+      const extractedId = extractNotionPageId(primaryLink);
+      rawSetItem(USER_ID_STORAGE_KEY, extractedId);
+      return extractedId;
+    }
+
+    const currentPageId = getCurrentNotionPageId();
+
+    if (currentPageId) {
+      rawSetItem(USER_ID_STORAGE_KEY, currentPageId);
+      return currentPageId;
+    }
+
+    const newId = createUserId();
+    rawSetItem(USER_ID_STORAGE_KEY, newId);
+    return newId;
+  }
+
+  function getScopedStorageKey(key) {
+    const keysThatNeedScoping = [
+      STORAGE_THEME_KEY,
+      STORAGE_NOTION_MODE_KEY
+    ];
+
+    if (keysThatNeedScoping.includes(key)) {
+      return `${getUserId()}::${key}`;
+    }
+
+    return key;
+  }
+
+  function safeGetItem(key) {
+    if (!storageAvailable) return null;
+
+    try {
+      return localStorage.getItem(getScopedStorageKey(key));
+    } catch (error) {
+      console.warn(`Could not read ${key}:`, error);
+      return null;
+    }
+  }
+
+  function safeSetItem(key, value) {
+    if (!storageAvailable) return;
+
+    try {
+      localStorage.setItem(getScopedStorageKey(key), value);
+    } catch (error) {
+      console.warn(`Could not save ${key}:`, error);
+    }
+  }
+
+  function safeRemoveItem(key) {
+    if (!storageAvailable) return;
+
+    try {
+      localStorage.removeItem(getScopedStorageKey(key));
+    } catch (error) {
+      console.warn(`Could not remove ${key}:`, error);
+    }
+  }
 
   function isValidTheme(themeValue) {
     return THEMES.some((theme) => theme.value === themeValue);
@@ -227,16 +288,7 @@ function safeGetItem(key) {
   }
 
   function getSavedLinks() {
-    const raw = safeGetItem(STORAGE_LINKS_KEY);
-    if (!raw) return {};
-
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object" ? parsed : {};
-    } catch (error) {
-      console.warn("Saved links were invalid JSON:", error);
-      return {};
-    }
+    return getRawSavedLinks();
   }
 
   function getCurrentSettings() {
@@ -249,6 +301,16 @@ function safeGetItem(key) {
   }
 
   function applySettingsToLocal(settings = {}) {
+    if (settings.links && typeof settings.links === "object") {
+      rawSetItem(STORAGE_LINKS_KEY, JSON.stringify(settings.links));
+
+      const primaryLink = settings.links.home || settings.links.settings;
+
+      if (primaryLink) {
+        rawSetItem(USER_ID_STORAGE_KEY, extractNotionPageId(primaryLink));
+      }
+    }
+
     if (settings.theme && isValidTheme(settings.theme)) {
       safeSetItem(STORAGE_THEME_KEY, settings.theme);
     }
@@ -257,62 +319,49 @@ function safeGetItem(key) {
       safeSetItem(STORAGE_NOTION_MODE_KEY, settings.notionMode);
     }
 
-    if (settings.links && typeof settings.links === "object") {
-      safeSetItem(STORAGE_LINKS_KEY, JSON.stringify(settings.links));
-    }
-
     applyNotionMode();
   }
 
   async function loadCloudSettings() {
-  try {
-    const existingLinks = getSavedLinks();
+    try {
+      const existingLinks = getSavedLinks();
+      const primaryLink = existingLinks.home || existingLinks.settings;
+      const currentPageId = getCurrentNotionPageId();
 
-    const primaryLink =
-      existingLinks.home || existingLinks.settings;
+      let fetchUrl = "";
 
-    let fetchUrl = "";
+      if (primaryLink) {
+        const pageId = extractNotionPageId(primaryLink);
+        fetchUrl = `${API_URL}?pageId=${encodeURIComponent(pageId)}`;
+      } else if (currentPageId) {
+        fetchUrl = `${API_URL}?pageId=${encodeURIComponent(currentPageId)}`;
+      } else {
+        const userId = getUserId();
+        fetchUrl = `${API_URL}?userId=${encodeURIComponent(userId)}`;
+      }
 
-    if (primaryLink) {
-      const pageId = extractNotionPageId(primaryLink);
+      const response = await fetch(fetchUrl, {
+        method: "GET"
+      });
 
-      fetchUrl =
-        `${API_URL}?pageId=${encodeURIComponent(pageId)}`;
-    } else {
-      const userId = getUserId();
+      if (!response.ok) {
+        throw new Error(`Cloud load failed: ${response.status}`);
+      }
 
-      fetchUrl =
-        `${API_URL}?userId=${encodeURIComponent(userId)}`;
+      const settings = await response.json();
+
+      if (settings && Object.keys(settings).length > 0) {
+        applySettingsToLocal(settings);
+      }
+
+      cloudLoaded = true;
+      return settings;
+    } catch (error) {
+      console.warn("Could not load cloud settings. Using local fallback:", error);
+      cloudLoaded = false;
+      return null;
     }
-
-    const response = await fetch(fetchUrl, {
-      method: "GET"
-    });
-
-    if (!response.ok) {
-      throw new Error(`Cloud load failed: ${response.status}`);
-    }
-
-    const settings = await response.json();
-
-    if (settings && Object.keys(settings).length > 0) {
-      applySettingsToLocal(settings);
-    }
-
-    cloudLoaded = true;
-
-    return settings;
-  } catch (error) {
-    console.warn(
-      "Could not load cloud settings. Using local fallback:",
-      error
-    );
-
-    cloudLoaded = false;
-
-    return null;
   }
-}
 
   async function saveCloudSettings() {
     const settings = getCurrentSettings();
@@ -353,28 +402,23 @@ function safeGetItem(key) {
   }
 
   function saveLinks(linksObject) {
-  localStorage.setItem(
-    STORAGE_LINKS_KEY,
-    JSON.stringify(linksObject || {})
-  );
+    rawSetItem(STORAGE_LINKS_KEY, JSON.stringify(linksObject || {}));
 
-  const primaryLink =
-    linksObject.home || linksObject.settings;
+    const primaryLink = linksObject.home || linksObject.settings;
 
-  if (primaryLink) {
-    const extractedId = extractNotionPageId(primaryLink);
+    if (primaryLink) {
+      const extractedId = extractNotionPageId(primaryLink);
+      rawSetItem(USER_ID_STORAGE_KEY, extractedId);
+    }
 
-    localStorage.setItem(USER_ID_STORAGE_KEY, extractedId);
+    broadcastSync();
+    saveCloudSettings();
   }
-
-  broadcastSync();
-  saveCloudSettings();
-}
 
   function resetSettings() {
     safeSetItem(STORAGE_THEME_KEY, DEFAULT_THEME);
     safeSetItem(STORAGE_NOTION_MODE_KEY, DEFAULT_NOTION_MODE);
-    safeSetItem(STORAGE_LINKS_KEY, JSON.stringify({}));
+    rawSetItem(STORAGE_LINKS_KEY, JSON.stringify({}));
 
     applyNotionMode(DEFAULT_NOTION_MODE);
     broadcastSync();
@@ -513,12 +557,12 @@ function safeGetItem(key) {
     });
 
     lastThemeSnapshot = safeGetItem(STORAGE_THEME_KEY) || "";
-    lastLinksSnapshot = safeGetItem(STORAGE_LINKS_KEY) || "";
+    lastLinksSnapshot = rawGetItem(STORAGE_LINKS_KEY) || "";
     lastNotionModeSnapshot = safeGetItem(STORAGE_NOTION_MODE_KEY) || "";
 
     setInterval(() => {
       const currentTheme = safeGetItem(STORAGE_THEME_KEY) || "";
-      const currentLinks = safeGetItem(STORAGE_LINKS_KEY) || "";
+      const currentLinks = rawGetItem(STORAGE_LINKS_KEY) || "";
       const currentNotionMode = safeGetItem(STORAGE_NOTION_MODE_KEY) || "";
 
       if (
@@ -571,9 +615,9 @@ function safeGetItem(key) {
               class="links-textarea"
               id="linksTextarea"
               spellcheck="false"
-              placeholder="home=https://www.notion.so/...
-library=https://www.notion.so/...
-tbrlibrary=https://www.notion.so/..."
+              placeholder="settings=https://www.notion.so/...
+home=https://www.notion.so/...
+library=https://www.notion.so/..."
             ></textarea>
           </div>
 
@@ -743,35 +787,35 @@ tbrlibrary=https://www.notion.so/..."
     }
 
     if (linkUrl) {
-  const finalUrl = linkUrl;
+      const finalUrl = linkUrl;
 
-  app.innerHTML = `
-    <div class="image-widget ${layoutClass}">
-      <a
-        class="image-link-button"
-        id="imageLink"
-        href="${escapeAttribute(finalUrl)}"
-        target="_top"
-        rel="noopener noreferrer"
-        aria-label="Open ${escapeAttribute(linkKey)} page"
-      >
-        ${imageMarkup}
-      </a>
-    </div>
-  `;
+      app.innerHTML = `
+        <div class="image-widget ${layoutClass}">
+          <a
+            class="image-link-button"
+            id="imageLink"
+            href="${escapeAttribute(finalUrl)}"
+            target="_top"
+            rel="noopener noreferrer"
+            aria-label="Open ${escapeAttribute(linkKey)} page"
+          >
+            ${imageMarkup}
+          </a>
+        </div>
+      `;
 
-  const linkElement = document.getElementById("imageLink");
+      const linkElement = document.getElementById("imageLink");
 
-  if (linkElement) {
-    linkElement.addEventListener("click", () => {
-      setTimeout(() => {
-        if (document.visibilityState === "visible") {
-          window.open(finalUrl, "_blank");
-        }
-      }, 350);
-    });
-  }
-} else {
+      if (linkElement) {
+        linkElement.addEventListener("click", () => {
+          setTimeout(() => {
+            if (document.visibilityState === "visible") {
+              window.open(finalUrl, "_blank");
+            }
+          }, 350);
+        });
+      }
+    } else {
       app.innerHTML = `
         <div class="image-widget ${layoutClass}">
           ${imageMarkup}
@@ -780,22 +824,6 @@ tbrlibrary=https://www.notion.so/..."
     }
 
     const img = document.getElementById("themeImage");
-
-    const linkElement = document.getElementById("imageLink");
-
-if (linkElement) {
-  linkElement.addEventListener("click", () => {
-    const startTime = Date.now();
-
-    setTimeout(() => {
-      const elapsed = Date.now() - startTime;
-
-      if (elapsed >= 300 && document.visibilityState === "visible") {
-        window.open(finalUrl, "_blank");
-      }
-    }, 350);
-  });
-}
 
     if (!img) return;
 

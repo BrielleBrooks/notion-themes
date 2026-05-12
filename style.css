@@ -17,13 +17,16 @@
   --transition: 220ms ease;
 }
 
-/* Critical reset */
+/* =========================
+   GLOBAL RESET
+========================= */
+
 html,
 body {
   width: 100%;
-  min-height: 100%;
-  margin: 0;
-  padding: 0;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
   background: var(--notion-widget-bg) !important;
   background-color: var(--notion-widget-bg) !important;
   overflow: hidden;
@@ -46,9 +49,10 @@ body[data-notion-mode="dark"] {
 
 #app {
   width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
   background: var(--notion-widget-bg) !important;
   background-color: var(--notion-widget-bg) !important;
 }
@@ -58,11 +62,15 @@ body[data-notion-mode="dark"] {
 ========================= */
 
 .image-mode {
-  margin: 0;
-  padding: 0;
+  width: 100%;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
   background: var(--notion-widget-bg) !important;
   background-color: var(--notion-widget-bg) !important;
-  overflow: hidden;
+  overflow: hidden !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
 }
 
 body.image-mode,
@@ -75,51 +83,69 @@ body.image-mode .image-widget a {
 
 body.image-mode #app {
   width: 100%;
-  height: auto;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  line-height: 0;
-  overflow: hidden;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+  overflow: hidden !important;
 }
 
 .image-widget {
+  display: block !important;
   width: 100%;
-  height: auto;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  background: var(--notion-widget-bg) !important;
-  background-color: var(--notion-widget-bg) !important;
-  line-height: 0;
-  overflow: hidden;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+  overflow: hidden !important;
+  vertical-align: top !important;
 }
 
+/* Core image rendering */
 .theme-image {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-width: 100%;
-  margin: 0;
-  padding: 0;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+  vertical-align: top !important;
   object-fit: contain;
   object-position: top left;
   background: transparent !important;
   background-color: transparent !important;
-  border: 0;
+  border: 0 !important;
 }
 
-/* Headers: responsive, left-aligned, not full-screen huge */
+/* =========================
+   IMAGE LAYOUT OPTIONS
+========================= */
+
+/* Headers: left-aligned and responsive */
 .image-widget.heading-layout {
   width: min(100%, 780px);
   max-width: 780px;
-  margin: 0;
-  padding: 0;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+  overflow: hidden !important;
 }
 
 .image-widget.heading-layout .theme-image {
-  width: 100%;
-  height: auto;
+  width: 100% !important;
+  height: auto !important;
 }
 
 /* Full-width dividers / underlines */
@@ -127,46 +153,62 @@ body.image-mode #app {
 .image-widget.underline-layout {
   width: 100%;
   max-width: 100%;
-  margin: 0;
-  padding: 0;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+  overflow: hidden !important;
 }
 
 .image-widget.divider-layout .theme-image,
 .image-widget.underline-layout .theme-image {
-  width: 100%;
-  height: auto;
+  width: 100% !important;
+  height: auto !important;
 }
 
-/* Smaller decorative images */
+/* Decorative/content images */
 .image-widget.decor-layout {
   width: min(100%, 560px);
   max-width: 560px;
-  margin: 0 auto;
-  padding: 0;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+  overflow: hidden !important;
 }
 
 .image-widget.decor-layout .theme-image {
-  width: 100%;
-  height: auto;
+  width: 100% !important;
+  height: auto !important;
 }
 
 /* Clickable nav image widgets */
 .image-link-button {
-  display: block;
+  display: block !important;
   width: 100%;
-  margin: 0;
-  padding: 0;
-  border: 0;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
   background: transparent !important;
-  line-height: 0;
+  background-color: transparent !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
   cursor: pointer;
   text-decoration: none;
+  overflow: hidden !important;
+  vertical-align: top !important;
 }
 
 .image-link-button .theme-image {
-  display: block;
-  width: 100%;
-  height: auto;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
 }
 
 .theme-image.clickable {
@@ -175,4 +217,222 @@ body.image-mode #app {
 
 .quiet-error {
   display: none;
+}
+
+/* =========================
+   CONTROL PANEL MODE
+========================= */
+
+.control-mode {
+  background: var(--notion-widget-bg) !important;
+  background-color: var(--notion-widget-bg) !important;
+  overflow: auto;
+}
+
+.control-shell {
+  width: 100%;
+  min-height: 100vh;
+  padding: 16px;
+  display: grid;
+  place-items: center;
+  background: var(--notion-widget-bg) !important;
+  background-color: var(--notion-widget-bg) !important;
+}
+
+.control-card {
+  width: min(100%, 680px);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.12), transparent 34%),
+    var(--bg-dark);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  padding: 22px;
+  color: var(--text);
+}
+
+.control-header {
+  margin-bottom: 18px;
+}
+
+.control-kicker {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.control-title {
+  margin: 0;
+  font-size: clamp(24px, 5vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-weight: 800;
+}
+
+.control-subtitle {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.control-section {
+  margin-top: 18px;
+}
+
+.control-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.links-textarea {
+  width: 100%;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text);
+  border-radius: var(--radius-md);
+  font: inherit;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  min-height: 210px;
+  resize: vertical;
+  padding: 14px;
+  line-height: 1.45;
+}
+
+.links-textarea:focus {
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
+}
+
+/* =========================
+   THEME BUTTONS
+========================= */
+
+.theme-preview-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.theme-pill {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+  cursor: pointer;
+  transition: transform var(--transition), background var(--transition), color var(--transition);
+}
+
+.theme-pill:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.theme-pill.active {
+  background: #ffffff;
+  color: #191919;
+}
+
+/* =========================
+   NOTION MODE BUTTONS
+========================= */
+
+.notion-mode-toggle {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.mode-pill {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+  cursor: pointer;
+  transition: transform var(--transition), background var(--transition), color var(--transition);
+}
+
+.mode-pill:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.mode-pill.active {
+  background: #ffffff;
+  color: #191919;
+}
+
+/* =========================
+   BUTTONS + STATUS
+========================= */
+
+.control-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform var(--transition), opacity var(--transition), background var(--transition);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--button-bg);
+  color: var(--button-text);
+}
+
+.btn-secondary {
+  background: var(--secondary-bg);
+  color: var(--text);
+}
+
+.status-message {
+  margin-top: 14px;
+  min-height: 20px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.status-message.success {
+  color: #8ff0b1;
+}
+
+.status-message.warning {
+  color: #ffd37a;
 }

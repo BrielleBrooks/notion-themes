@@ -119,7 +119,6 @@
   function getScopedStorageKey(key) {
   const keysThatNeedScoping = [
     STORAGE_THEME_KEY,
-    STORAGE_LINKS_KEY,
     STORAGE_NOTION_MODE_KEY
   ];
 

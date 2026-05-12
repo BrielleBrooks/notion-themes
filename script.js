@@ -849,6 +849,94 @@ library=https://www.notion.so/..."
     return escapeHtml(value);
   }
 
+  function openThemeTestDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("ReadingTrackerThemeTest", 1);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+
+      if (!db.objectStoreNames.contains("testStore")) {
+        db.createObjectStore("testStore");
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function idbSetTestValue(key, value) {
+  const db = await openThemeTestDB();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("testStore", "readwrite");
+    const store = tx.objectStore("testStore");
+
+    store.put(value, key);
+
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function idbGetTestValue(key) {
+  const db = await openThemeTestDB();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("testStore", "readonly");
+    const store = tx.objectStore("testStore");
+    const request = store.get(key);
+
+    request.onsuccess = () => resolve(request.result || "");
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function renderIndexedDBTestPanel() {
+  document.body.classList.remove("image-mode");
+  document.body.classList.add("control-mode");
+
+  const previousValue = await idbGetTestValue("savedTestValue");
+  const newValue = `Saved at ${new Date().toLocaleString()}`;
+
+  await idbSetTestValue("savedTestValue", newValue);
+
+  const confirmedValue = await idbGetTestValue("savedTestValue");
+
+  app.innerHTML = `
+    <pre style="
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      color: white;
+      background: #191919;
+      padding: 16px;
+      margin: 0;
+      min-height: 100vh;
+    ">INDEXEDDB TEST
+
+Previous saved value:
+${escapeHtml(previousValue || "EMPTY")}
+
+New saved value:
+${escapeHtml(newValue)}
+
+Confirmed current value:
+${escapeHtml(confirmedValue || "EMPTY")}
+
+Test instructions:
+1. Refresh this embed/page.
+2. Check if Previous saved value shows the last saved time.
+3. Hard close Notion/Safari on iPad.
+4. Reopen.
+5. Check if Previous saved value still survives.
+    </pre>
+  `;
+}
+
   function renderDebugPanel() {
   document.body.classList.remove("image-mode");
   document.body.classList.add("control-mode");
@@ -894,12 +982,17 @@ ${escapeHtml(JSON.stringify(savedLinks, null, 2))}
   startStorageListeners();
   applyNotionMode();
 
+  if (type === "idbtest") {
+    await renderIndexedDBTestPanel();
+    return;
+  }
+
   await loadCloudSettings();
 
-  if (type === "debug") {
-    renderDebugPanel();
-  } else if (type === "control") {
+  if (type === "control") {
     renderControlPanel();
+  } else if (type === "debug") {
+    renderDebugPanel();
   } else {
     renderImageWidget();
   }

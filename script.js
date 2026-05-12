@@ -330,10 +330,23 @@ function safeGetItem(key) {
   }
 
   function saveLinks(linksObject) {
-    safeSetItem(STORAGE_LINKS_KEY, JSON.stringify(linksObject || {}));
-    broadcastSync();
-    saveCloudSettings();
+  localStorage.setItem(
+    STORAGE_LINKS_KEY,
+    JSON.stringify(linksObject || {})
+  );
+
+  const primaryLink =
+    linksObject.home || linksObject.settings;
+
+  if (primaryLink) {
+    const extractedId = extractNotionPageId(primaryLink);
+
+    localStorage.setItem(USER_ID_STORAGE_KEY, extractedId);
   }
+
+  broadcastSync();
+  saveCloudSettings();
+}
 
   function resetSettings() {
     safeSetItem(STORAGE_THEME_KEY, DEFAULT_THEME);

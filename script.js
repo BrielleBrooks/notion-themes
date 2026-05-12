@@ -742,7 +742,12 @@ library=https://www.notion.so/..."
     const linkUrl = linkKey && links[linkKey] ? links[linkKey] : "";
     const imageSrc = getAssetPath(selectedTheme, assetName);
     const altText = assetToAltText(assetName);
-    const layoutClass = layoutParam === "heading" ? "heading-layout" : "";
+    const layoutClass =
+  layoutParam === "heading" ? "heading-layout" :
+  layoutParam === "divider" ? "divider-layout" :
+  layoutParam === "underline" ? "underline-layout" :
+  layoutParam === "decor" ? "decor-layout" :
+  "";
 
     const imageMarkup = `
       <img

@@ -849,19 +849,61 @@ library=https://www.notion.so/..."
     return escapeHtml(value);
   }
 
+  function renderDebugPanel() {
+  document.body.classList.remove("image-mode");
+  document.body.classList.add("control-mode");
+
+  const currentPageId = getCurrentNotionPageId();
+  const userId = getUserId();
+  const savedLinks = getSavedLinks();
+
+  app.innerHTML = `
+    <pre style="
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      color: white;
+      background: #191919;
+      padding: 16px;
+      margin: 0;
+      min-height: 100vh;
+    ">DEBUG INFO
+
+document.referrer:
+${escapeHtml(document.referrer || "EMPTY")}
+
+window.location.href:
+${escapeHtml(window.location.href || "EMPTY")}
+
+detected current page ID:
+${escapeHtml(currentPageId || "EMPTY")}
+
+stored user ID:
+${escapeHtml(userId || "EMPTY")}
+
+saved links:
+${escapeHtml(JSON.stringify(savedLinks, null, 2))}
+    </pre>
+  `;
+}
+
   async function init() {
-    initBroadcastChannel();
-    startStorageListeners();
-    applyNotionMode();
+  initBroadcastChannel();
+  startStorageListeners();
+  applyNotionMode();
 
-    await loadCloudSettings();
+  await loadCloudSettings();
 
-    if (type === "control") {
-      renderControlPanel();
-    } else {
-      renderImageWidget();
-    }
+  if (type === "debug") {
+    renderDebugPanel();
+  } else if (type === "control") {
+    renderControlPanel();
+  } else {
+    renderImageWidget();
   }
+}
 
   init();
 })();

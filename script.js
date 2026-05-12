@@ -89,7 +89,6 @@
   const assetParam = params.get("asset");
   const linkKeyParam = params.get("linkKey");
   const layoutParam = params.get("layout");
-  const navModeParam = params.get("navMode");
 
   const app = document.getElementById("app");
 
@@ -98,7 +97,6 @@
   let lastLinksSnapshot = "";
   let lastNotionModeSnapshot = "";
   let controlEventsBound = false;
-  let cloudLoaded = false;
 
   function canUseLocalStorage() {
     try {
@@ -135,16 +133,6 @@
     }
   }
 
-  function rawRemoveItem(key) {
-    if (!storageAvailable) return;
-
-    try {
-      localStorage.removeItem(key);
-    } catch (error) {
-      console.warn(`Could not raw-remove ${key}:`, error);
-    }
-  }
-
   function createUserId() {
     return `rt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
   }
@@ -168,10 +156,7 @@
   }
 
   function getCurrentNotionPageId() {
-    const candidates = [
-      document.referrer,
-      window.location.href
-    ];
+    const candidates = [document.referrer, window.location.href];
 
     for (const candidate of candidates) {
       const pageId = extractNotionPageId(candidate);
@@ -259,16 +244,6 @@
     }
   }
 
-  function safeRemoveItem(key) {
-    if (!storageAvailable) return;
-
-    try {
-      localStorage.removeItem(getScopedStorageKey(key));
-    } catch (error) {
-      console.warn(`Could not remove ${key}:`, error);
-    }
-  }
-
   function isValidTheme(themeValue) {
     return THEMES.some((theme) => theme.value === themeValue);
   }
@@ -340,9 +315,7 @@
         fetchUrl = `${API_URL}?userId=${encodeURIComponent(userId)}`;
       }
 
-      const response = await fetch(fetchUrl, {
-        method: "GET"
-      });
+      const response = await fetch(fetchUrl, { method: "GET" });
 
       if (!response.ok) {
         throw new Error(`Cloud load failed: ${response.status}`);
@@ -354,11 +327,9 @@
         applySettingsToLocal(settings);
       }
 
-      cloudLoaded = true;
       return settings;
     } catch (error) {
       console.warn("Could not load cloud settings. Using local fallback:", error);
-      cloudLoaded = false;
       return null;
     }
   }
@@ -691,7 +662,7 @@ library=https://www.notion.so/..."
         const selectedTheme = themeButton.dataset.theme;
         saveTheme(selectedTheme);
         renderThemePills(selectedTheme);
-        showStatus("Theme saved and synced.", "success");
+        showStatus("Theme saved.", "success");
         return;
       }
 
@@ -701,7 +672,7 @@ library=https://www.notion.so/..."
         const selectedMode = modeButton.dataset.mode;
         saveNotionMode(selectedMode);
         renderModePills(selectedMode);
-        showStatus(`Notion ${selectedMode} mode saved and synced.`, "success");
+        showStatus(`Notion ${selectedMode} mode saved.`, "success");
         return;
       }
 
@@ -717,7 +688,7 @@ library=https://www.notion.so/..."
           showStatus(`Saved with ${warnings.length} warning${warnings.length === 1 ? "" : "s"}. Check your link format.`, "warning");
           console.warn("Theme widget link warnings:", warnings);
         } else {
-          showStatus("Settings saved and synced successfully.", "success");
+          showStatus("Settings saved successfully.", "success");
         }
 
         return;
@@ -728,7 +699,7 @@ library=https://www.notion.so/..."
       if (resetBtn) {
         resetSettings();
         refreshControlFromStorage();
-        showStatus("Settings reset and synced.", "warning");
+        showStatus("Settings reset.", "warning");
       }
     });
   }
@@ -849,154 +820,19 @@ library=https://www.notion.so/..."
     return escapeHtml(value);
   }
 
-  function openThemeTestDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open("ReadingTrackerThemeTest", 1);
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-
-      if (!db.objectStoreNames.contains("testStore")) {
-        db.createObjectStore("testStore");
-      }
-    };
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-async function idbSetTestValue(key, value) {
-  const db = await openThemeTestDB();
-
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction("testStore", "readwrite");
-    const store = tx.objectStore("testStore");
-
-    store.put(value, key);
-
-    tx.oncomplete = () => resolve(true);
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function idbGetTestValue(key) {
-  const db = await openThemeTestDB();
-
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction("testStore", "readonly");
-    const store = tx.objectStore("testStore");
-    const request = store.get(key);
-
-    request.onsuccess = () => resolve(request.result || "");
-    request.onerror = () => reject(request.error);
-  });
-}
-
-async function renderIndexedDBTestPanel() {
-  document.body.classList.remove("image-mode");
-  document.body.classList.add("control-mode");
-
-  const previousValue = await idbGetTestValue("savedTestValue");
-  const newValue = `Saved at ${new Date().toLocaleString()}`;
-
-  await idbSetTestValue("savedTestValue", newValue);
-
-  const confirmedValue = await idbGetTestValue("savedTestValue");
-
-  app.innerHTML = `
-    <pre style="
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-family: monospace;
-      font-size: 13px;
-      line-height: 1.5;
-      color: white;
-      background: #191919;
-      padding: 16px;
-      margin: 0;
-      min-height: 100vh;
-    ">INDEXEDDB TEST
-
-Previous saved value:
-${escapeHtml(previousValue || "EMPTY")}
-
-New saved value:
-${escapeHtml(newValue)}
-
-Confirmed current value:
-${escapeHtml(confirmedValue || "EMPTY")}
-
-Test instructions:
-1. Refresh this embed/page.
-2. Check if Previous saved value shows the last saved time.
-3. Hard close Notion/Safari on iPad.
-4. Reopen.
-5. Check if Previous saved value still survives.
-    </pre>
-  `;
-}
-
-  function renderDebugPanel() {
-  document.body.classList.remove("image-mode");
-  document.body.classList.add("control-mode");
-
-  const currentPageId = getCurrentNotionPageId();
-  const userId = getUserId();
-  const savedLinks = getSavedLinks();
-
-  app.innerHTML = `
-    <pre style="
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-family: monospace;
-      font-size: 13px;
-      line-height: 1.5;
-      color: white;
-      background: #191919;
-      padding: 16px;
-      margin: 0;
-      min-height: 100vh;
-    ">DEBUG INFO
-
-document.referrer:
-${escapeHtml(document.referrer || "EMPTY")}
-
-window.location.href:
-${escapeHtml(window.location.href || "EMPTY")}
-
-detected current page ID:
-${escapeHtml(currentPageId || "EMPTY")}
-
-stored user ID:
-${escapeHtml(userId || "EMPTY")}
-
-saved links:
-${escapeHtml(JSON.stringify(savedLinks, null, 2))}
-    </pre>
-  `;
-}
-
   async function init() {
-  initBroadcastChannel();
-  startStorageListeners();
-  applyNotionMode();
+    initBroadcastChannel();
+    startStorageListeners();
+    applyNotionMode();
 
-  if (type === "idbtest") {
-    await renderIndexedDBTestPanel();
-    return;
+    await loadCloudSettings();
+
+    if (type === "control") {
+      renderControlPanel();
+    } else {
+      renderImageWidget();
+    }
   }
-
-  await loadCloudSettings();
-
-  if (type === "control") {
-    renderControlPanel();
-  } else if (type === "debug") {
-    renderDebugPanel();
-  } else {
-    renderImageWidget();
-  }
-}
 
   init();
 })();
